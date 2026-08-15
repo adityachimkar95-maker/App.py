@@ -12,7 +12,7 @@ st.set_page_config(
     page_icon="🏎️"
 )
 
-# 🌟 High Visibility White Theme Styling (CSS)
+# 🌟 High Visibility White Theme & Mobile Optimized Tabs (CSS)
 st.markdown("""
     <style>
     .stApp {
@@ -30,20 +30,20 @@ st.markdown("""
         border: 1px solid #cbd5e1;
         box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
         border-radius: 16px;
-        padding: 20px;
-        margin-bottom: 20px;
+        padding: 15px;
+        margin-bottom: 15px;
         text-align: center;
     }
     .hero-title {
         color: #d97706;
-        font-size: 24px;
+        font-size: 20px;
         font-weight: 800;
         text-transform: uppercase;
         margin: 0;
     }
     .hero-sub {
         color: #475569;
-        font-size: 13px;
+        font-size: 12px;
         margin-top: 5px;
     }
 
@@ -56,16 +56,14 @@ st.markdown("""
         border-radius: 8px !important;
         padding: 10px !important;
         font-weight: 700 !important;
-        font-size: 16px !important;
+        font-size: 15px !important;
     }
     
-    /* Labels visibility */
     label, .stMarkdown p, span {
         color: #1e293b !important;
         font-weight: 600;
     }
 
-    /* Selectbox Styling */
     .stSelectbox div[data-baseweb="select"] {
         background-color: #ffffff !important;
         color: #0f172a !important;
@@ -73,7 +71,6 @@ st.markdown("""
         border-radius: 8px !important;
     }
 
-    /* Buttons Styling */
     .stButton>button {
         background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
         color: #ffffff !important;
@@ -86,23 +83,31 @@ st.markdown("""
         font-size: 16px !important;
     }
 
-    /* Tabs Styling */
+    /* Mobile Friendly Tabs Fix (No overflow/hiding) */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 8px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
         background: #e2e8f0;
-        padding: 8px;
-        border-radius: 12px;
+        padding: 6px;
+        border-radius: 10px;
     }
     .stTabs [data-baseweb="tab"] {
-        border-radius: 8px;
+        flex: 1;
+        min-width: 110px;
+        height: 40px;
+        border-radius: 6px;
         color: #334155 !important;
         font-weight: 700;
+        font-size: 13px;
+        background: #f1f5f9;
+        justify-content: center;
     }
     .stTabs [aria-selected="true"] {
         background: #ffffff !important;
         color: #b45309 !important;
         font-weight: 900 !important;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
     }
     </style>
 """, unsafe_allow_html=True)
@@ -155,7 +160,7 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-tab1, tab2, tab3, tab4 = st.tabs(["🛒 Estimate & Billing", "📦 Inventory Stock", "📖 Udhar Khata", "📊 Records"])
+tab1, tab2, tab3, tab4 = st.tabs(["🛒 Billing", "📦 Stock", "📖 Udhar", "📊 Records"])
 
 # --------------------------------------------------------
 # TAB 1: ESTIMATE & BILLING
@@ -163,19 +168,29 @@ tab1, tab2, tab3, tab4 = st.tabs(["🛒 Estimate & Billing", "📦 Inventory Sto
 with tab1:
     st.subheader("📝 New Customer Estimate & Billing")
     
+    # Initialize session state for customer inputs so they can be cleared automatically
+    if "c_name_input" not in st.session_state:
+        st.session_state.c_name_input = ""
+    if "c_mobile_input" not in st.session_state:
+        st.session_state.c_mobile_input = ""
+    if "v_number_input" not in st.session_state:
+        st.session_state.v_number_input = ""
+    if "v_model_input" not in st.session_state:
+        st.session_state.v_model_input = ""
+
     col_c1, col_c2 = st.columns(2)
     with col_c1:
-        c_name = st.text_input("Customer Name", placeholder="e.g. Aditya Chimkar")
-        c_mobile = st.text_input("Customer Mobile Number", placeholder="9158551896")
+        c_name = st.text_input("Customer Name", value=st.session_state.c_name_input, placeholder="e.g. Aditya Chimkar")
+        c_mobile = st.text_input("Customer Mobile Number", value=st.session_state.c_mobile_input, placeholder="9158551896")
     with col_c2:
-        v_number = st.text_input("Vehicle Number", placeholder="MH19CH9695").upper()
-        v_model = st.text_input("Vehicle Model", placeholder="Swift / Splendor")
+        v_number = st.text_input("Vehicle Number", value=st.session_state.v_number_input, placeholder="MH19CH9695").upper()
+        v_model = st.text_input("Vehicle Model", value=st.session_state.v_model_input, placeholder="Swift / Splendor")
 
     if "cart" not in st.session_state:
         st.session_state.cart = []
 
     st.markdown("---")
-    st.markdown("### ➕ Add Items (Auto-fetch MRP & Selling Price)")
+    st.markdown("### ➕ Add Items")
     
     inv_df = pd.read_sql("SELECT * FROM parts", conn)
     
@@ -289,7 +304,7 @@ with tab1:
                 cursor.execute('''
                     INSERT INTO sales (customer_name, customer_mobile, vehicle_number, vehicle_model, items_summary, parts_total, total_mrp_sum, total_savings, labour_desc, labour_cost, total_bill, amount_paid, balance_due, payment_mode, date)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (c_name, c_mobile, v_number, v_model, items_summary_str, parts_total_sum, total_mrp_sum, total_savings, labour_desc, labour_cost, total_bill, amount_paid, balance_due, pay_mode, current_date))
+                لل''', (c_name, c_mobile, v_number, v_model, items_summary_str, parts_total_sum, total_mrp_sum, total_savings, labour_desc, labour_cost, total_bill, amount_paid, balance_due, pay_mode, current_date))
                 
                 sale_id = cursor.lastrowid
 
@@ -335,9 +350,13 @@ with tab1:
                     sms_link = f"sms:{c_mobile}?body={urllib.parse.quote(slip_text)}"
                     st.link_button("💬 Share via SMS", sms_link)
                 
-                if st.button("🔄 Clear Cart for Next Bill"):
-                    st.session_state.cart = []
-                    st.rerun()
+                # Automatically reset customer details and cart for next bill
+                st.session_state.cart = []
+                st.session_state.c_name_input = ""
+                st.session_state.c_mobile_input = ""
+                st.session_state.v_number_input = ""
+                st.session_state.v_model_input = ""
+                st.rerun()
 
 # --------------------------------------------------------
 # TAB 2: INVENTORY STOCK MANAGEMENT
@@ -373,7 +392,7 @@ with tab2:
 # TAB 3: UDHAR KHATA MANAGEMENT
 # --------------------------------------------------------
 with tab3:
-    st.subheader("📖 Udhar Khata (Pending Dues & Work History)")
+    st.subheader("📖 Udhar Khata (Pending Dues)")
     
     udhar_df = pd.read_sql("SELECT id, customer_name, customer_mobile, vehicle_number, items_summary, total_bill, amount_paid, balance_due, date FROM sales WHERE balance_due > 0", conn)
     
@@ -415,4 +434,4 @@ with tab4:
         st.dataframe(records_df, use_container_width=True)
     else:
         st.info("कोई पुराना रिकॉर्ड नहीं मिला।")
-    
+        
