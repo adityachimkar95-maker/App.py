@@ -83,9 +83,9 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --------------------------------------------------------
-# DATABASE SETUP (With MRP & Selling Price)
+# DATABASE SETUP
 # --------------------------------------------------------
-conn = sqlite3.connect("autoparts_shop_v3.db", check_same_thread=False)
+conn = sqlite3.connect("autoparts_shop_v4.db", check_same_thread=False)
 cursor = conn.cursor()
 
 cursor.execute('''
@@ -133,7 +133,7 @@ st.markdown("""
 tab1, tab2, tab3, tab4 = st.tabs(["🛒 Estimate & Billing", "📦 Inventory Stock", "📖 Udhar Khata", "📊 Records"])
 
 # --------------------------------------------------------
-# TAB 1: ESTIMATE & BILLING
+# TAB 1: ESTIMATE & BILLING (AUTO MRP / SELLING PRICE)
 # --------------------------------------------------------
 with tab1:
     st.subheader("📝 New Customer Estimate & Billing")
@@ -150,51 +150,64 @@ with tab1:
         st.session_state.cart = []
 
     st.markdown("---")
-    st.markdown("### ➕ Add Items (Inventory or Custom Without ID)")
+    st.markdown("### ➕ Add Items (Auto-fetch MRP & Selling Price)")
     
-    # Fetch inventory
+    # Fetch inventory data
     inv_df = pd.read_sql("SELECT * FROM parts", conn)
-    item_choices = ["-- Choose from Inventory or Add Custom --"] + inv_df['name'].tolist() if not inv_df.empty else ["-- Choose from Inventory or Add Custom --"]
     
-    selected_inv_item = st.selectbox("Select Part", item_choices)
-    
+    # Dictionary creation for quick auto-fill lookup
+    inventory_dict = {}
+    item_choices = ["-- Custom Item (मैन्युअल लिखें) --"]
+    if not inv_df.empty:
+        for _, row in inv_df.iterrows():
+            item_name = row['name']
+            item_choices.append(item_name)
+            inventory_dict[item_name] = {
+                "mrp": row['mrp'],
+                "selling_price": row['selling_price']
+            }
+
+    selected_inv_item = st.selectbox("Select Part from Inventory", item_choices)
+
+    # Automatic default values setup based on selection
+    default_mrp = 0.0
+    default_selling = 0.0
+    if selected_inv_item != "-- Custom Item (मैन्युअल लिखें) --" and selected_inv_item in inventory_dict:
+        default_mrp = float(inventory_dict[selected_inv_item]["mrp"])
+        default_selling = float(inventory_dict[selected_inv_item]["selling_price"])
+
     col_a, col_b, col_c, col_d = st.columns(4)
     with col_a:
-        custom_name_input = st.text_input("Custom Part Name (यदि लिस्ट में न हो)", placeholder="उदा. Chain Cleaning")
+        # If inventory item selected, use it as default name; else allow custom typing
+        if selected_inv_item != "-- Custom Item (मैन्युअल लिखें) --":
+            p_name_final = st.text_input("Part Name", value=selected_inv_item)
+        else:
+            p_name_final = st.text_input("Custom Part Name", placeholder="उदा. Chain Cleaning")
     with col_b:
-        item_mrp_input = st.number_input("MRP (₹)", min_value=0.0, step=10.0)
+        item_mrp_input = st.number_input("MRP (₹)", min_value=0.0, value=default_mrp, step=10.0)
     with col_c:
-        item_selling_input = st.number_input("Selling Price (₹)", min_value=0.0, step=10.0)
+        item_selling_input = st.number_input("Selling Price (₹)", min_value=0.0, value=default_selling, step=10.0)
     with col_d:
         qty_input = st.number_input("Quantity", min_value=1, value=1)
 
     if st.button("➕ Add to Bill Cart"):
-        # Determine item details
-        if selected_inv_item != "-- Choose from Inventory or Add Custom --":
-            row = inv_df[inv_df['name'] == selected_inv_item].iloc[0]
-            p_name = row['name']
-            p_mrp = row['mrp']
-            p_price = row['selling_price']
-        else:
-            p_name = custom_name_input
-            p_mrp = item_mrp_input if item_mrp_input > 0 else item_selling_input
-            p_price = item_selling_input
+        if p_name_final and item_selling_input > 0:
+            final_mrp = item_mrp_input if item_mrp_input > 0 else item_selling_input
+            item_total = item_selling_input * qty_input
+            item_total_mrp = final_mrp * qty_input
             
-        if p_name and p_price > 0:
-            item_total = p_price * qty_input
-            item_total_mrp = p_mrp * qty_input
             st.session_state.cart.append({
-                "name": p_name,
-                "mrp": p_mrp,
-                "price": p_price,
+                "name": p_name_final,
+                "mrp": final_mrp,
+                "price": item_selling_input,
                 "qty": qty_input,
                 "total": item_total,
                 "total_mrp": item_total_mrp
             })
-            st.success(f"Added {p_name} to cart!")
+            st.success(f"Added {p_name_final} to cart!")
             st.rerun()
         else:
-            st.warning("⚠️ कृपया सही नाम और सेलिंग प्राइस दर्ज करें!")
+            st.warning("⚠️ कृपया सही पार्ट का नाम और सेलिंग प्राइस दर्ज करें!")
 
     # Display Cart / Live Preview
     if st.session_state.cart:
@@ -209,7 +222,7 @@ with tab1:
             
             col_i1, col_i2, col_i3 = st.columns([3, 2, 1])
             with col_i1:
-                st.write(f"**{item['name']}** (x{item['qty']}) - MRP: ₹{item['mrp']} | Sell: ₹{item['price']}")
+                st.write(f"**{item['name']}** (x{item['qty']}) | MRP: ₹{item['mrp']} | Sell: ₹{item['price']}")
             with col_i2:
                 st.write(f"₹{item['total']:.2f}")
             with col_i3:
@@ -246,19 +259,23 @@ with tab1:
                 st.warning("⚠️ कृपया कस्टमर का नाम और गाड़ी नंबर दर्ज करें।")
             else:
                 current_date = datetime.now().strftime("%d-%m-%Y %I:%M %p")
-                items_json = json.dumps(st.session_state.cart)
+                
+                # Readable summary string for database records & udhar tracking
+                items_desc_list = [f"{item['name']} (x{item['qty']})" for item in st.session_state.cart]
+                if labour_desc:
+                    items_desc_list.append(f"Labour: {labour_desc}")
+                items_summary_str = ", ".join(items_desc_list)
                 
                 cursor.execute('''
                     INSERT INTO sales (customer_name, customer_mobile, vehicle_number, vehicle_model, items_summary, parts_total, total_mrp_sum, total_savings, labour_desc, labour_cost, total_bill, amount_paid, balance_due, payment_mode, date)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (c_name, c_mobile, v_number, v_model, items_json, parts_total_sum, total_mrp_sum, total_savings, labour_desc, labour_cost, total_bill, amount_paid, balance_due, pay_mode, current_date))
+                ''', (c_name, c_mobile, v_number, v_model, items_summary_str, parts_total_sum, total_mrp_sum, total_savings, labour_desc, labour_cost, total_bill, amount_paid, balance_due, pay_mode, current_date))
                 
                 sale_id = cursor.lastrowid
                 conn.commit()
                 
                 st.success(f"✅ बिल सफलतापूर्व सेव हो गया! ID: #{sale_id}")
                 
-                # Formatted Message
                 formatted_items = "\n".join([f"{idx+1}. {item['name']} (x{item['qty']}) = ₹{item['total']:.2f}" for idx, item in enumerate(st.session_state.cart)])
                 
                 slip_text = f"""🏎️ *MY SHIVSHAKTI AUTO PARTS & SERVICE*
@@ -302,7 +319,7 @@ with tab1:
 # TAB 2: INVENTORY STOCK MANAGEMENT
 # --------------------------------------------------------
 with tab2:
-    st.subheader("📦 Inventory Stock Management (MRP & Selling Price)")
+    st.subheader("📦 Inventory Stock Management")
     
     with st.form("add_stock_form", clear_on_submit=True):
         st.markdown("### Add New Spare Part")
@@ -329,12 +346,13 @@ with tab2:
         st.info("स्टॉक में कोई सामान उपलब्ध नहीं है।")
 
 # --------------------------------------------------------
-# TAB 3: UDHAR KHATA MANAGEMENT
+# TAB 3: UDHAR KHATA MANAGEMENT (WITH WORK DETAILS)
 # --------------------------------------------------------
 with tab3:
-    st.subheader("📖 Udhar Khata (Pending Dues)")
+    st.subheader("📖 Udhar Khata (Pending Dues & Work History)")
     
-    udhar_df = pd.read_sql("SELECT id, customer_name, customer_mobile, vehicle_number, total_bill, amount_paid, balance_due, date FROM sales WHERE balance_due > 0", conn)
+    # Now selecting items_summary so you can see what work was done
+    udhar_df = pd.read_sql("SELECT id, customer_name, customer_mobile, vehicle_number, items_summary, total_bill, amount_paid, balance_due, date FROM sales WHERE balance_due > 0", conn)
     
     if not udhar_df.empty:
         st.dataframe(udhar_df, use_container_width=True)
@@ -365,13 +383,14 @@ with tab3:
         st.info("🎉 शानदार! कोई भी उधार बकाया नहीं है।")
 
 # --------------------------------------------------------
-# TAB 4: HISTORICAL RECORDS
+# TAB 4: HISTORICAL RECORDS (WITH WORK DETAILS)
 # --------------------------------------------------------
 with tab4:
-    st.subheader("📊 All Sales & Estimate Records")
-    records_df = pd.read_sql("SELECT id, customer_name, vehicle_number, total_bill, amount_paid, balance_due, total_savings, payment_mode, date FROM sales ORDER BY id DESC", conn)
+    st.subheader("📊 All Sales & Service Records")
+    # Now selecting items_summary here too so complete history of work done is visible
+    records_df = pd.read_sql("SELECT id, customer_name, vehicle_number, items_summary, total_bill, amount_paid, balance_due, total_savings, payment_mode, date FROM sales ORDER BY id DESC", conn)
     if not records_df.empty:
         st.dataframe(records_df, use_container_width=True)
     else:
         st.info("कोई पुराना रिकॉर्ड नहीं मिला।")
-                    
+            
