@@ -98,11 +98,11 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Database Connection (v8 updated to avoid old corrupt table structure)
-conn = sqlite3.connect('garage_billing_v8.db', check_same_thread=False)
+# Database Connection (v9 नया वर्शन ताकि पुरानी टेबल का कोई एरर न आए)
+conn = sqlite3.connect('garage_billing_v9.db', check_same_thread=False)
 c = conn.cursor()
 
-# Tables Setup with corrected closing bracket
+# Tables Setup with MRP, Selling Price, and Payment Mode
 c.execute('''CREATE TABLE IF NOT EXISTS inventory (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     item_name TEXT,
@@ -178,11 +178,17 @@ with tab1:
             add_btn = st.form_submit_button("Add to Bill")
             
         if add_btn:
-            name_to_add = custom_name if selected_item == "-- Custom Item --" and custom_name else selected_item
-            if name_to_add and name_to_add != "-- Custom Item --":
-                final_mrp = item_mrp if selected_item == "-- Custom Item --" else item_options.get(selected_item, {}).get("mrp", item_mrp)
-                final_price = item_price if selected_item == "-- Custom Item --" else item_options.get(selected_item, {}).get("price", item_price)
+            # अगर कस्टम आइटम चुना है और नाम लिखा है, तो वो लें; वरना सिलेक्टेड इन्वेंट्री आइटम लें
+            if selected_item == "-- Custom Item --":
+                name_to_add = custom_name
+                final_mrp = item_mrp
+                final_price = item_price
+            else:
+                name_to_add = selected_item
+                final_mrp = item_options.get(selected_item, {}).get("mrp", 0.0)
+                final_price = item_options.get(selected_item, {}).get("price", 0.0)
                 
+            if name_to_add:
                 st.session_state.cart.append({
                     "name": name_to_add,
                     "mrp": final_mrp,
@@ -191,6 +197,8 @@ with tab1:
                 })
                 st.success(f"Added {name_to_add} to bill!")
                 st.rerun()
+            else:
+                st.warning("Please enter or select a valid item name.")
 
     # Display Cart / Items added
     if st.session_state.cart:
@@ -246,7 +254,7 @@ with tab1:
                 
                 # Create WhatsApp Message with Supermarket-style Savings
                 items_text_wa = "\n".join(item_details_list)
-                wa_message = f"""🛠️ *MY AUTO SERVICE CENTER* 🛠️
+                wa_message = f"""🛠️ *PRO GARAGE ERP* 🛠️
 📍 Main Road, City
 📞 09158551896
 ----------------------------------------
@@ -268,7 +276,6 @@ with tab1:
                 
                 st.link_button("📲 Send WhatsApp Bill", whatsapp_url)
                 
-                # Reset cart option
                 if st.button("Clear Cart & Create New Bill"):
                     st.session_state.cart = []
                     st.rerun()
@@ -303,4 +310,4 @@ with tab3:
         st.dataframe(bills_df, use_container_width=True)
     else:
         st.info("No bill records found.")
-                                         
+    
