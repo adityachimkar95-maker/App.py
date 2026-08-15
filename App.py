@@ -3,7 +3,7 @@ import sqlite3
 import pandas as pd
 from datetime import datetime
 import urllib.parse
-import json 
+import json
 
 # 🎨 Page Configuration (Mobile & Desktop Optimized)
 st.set_page_config(
@@ -12,7 +12,7 @@ st.set_page_config(
     page_icon="🏎️"
 )
 
-# 🌟 Advanced CSS & Mobile UI Fixes
+# 🌟 Advanced Mobile Navigation CSS with Big Bold Names & Icons
 st.markdown("""
     <style>
     .stApp {
@@ -84,31 +84,13 @@ st.markdown("""
         padding: 12px;
         font-size: 16px !important;
     }
-
-    /* 🌟 Stylish Horizontal Radio Menu for Mobile */
-    div.row-widget.stRadio > div {
-        flex-direction: row;
-        background: #e2e8f0;
-        padding: 6px;
-        border-radius: 14px;
-        justify-content: space-around;
-    }
-    div.row-widget.stRadio > div label {
-        background: #ffffff;
-        padding: 8px 16px;
-        border-radius: 10px;
-        font-weight: 800 !important;
-        color: #1e293b !important;
-        border: 1px solid #cbd5e1;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    }
     </style>
 """, unsafe_allow_html=True)
 
 # --------------------------------------------------------
 # DATABASE SETUP
 # --------------------------------------------------------
-conn = sqlite3.connect("autoparts_shop_v7.db", check_same_thread=False)
+conn = sqlite3.connect("autoparts_shop_v9.db", check_same_thread=False)
 cursor = conn.cursor()
 
 cursor.execute('''
@@ -153,20 +135,35 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# 🌟 Advanced Navigation Menu (Replaced buggy standard tabs with crisp horizontal radio buttons)
-selected_tab = st.radio(
-    "Navigation Menu",
-    ["🛒 Billing", "📦 Stock", "📖 Udhar", "📊 Records"],
-    horizontal=True,
-    label_visibility="collapsed"
-)
+# 🌟 Session State for Menu Selection
+if "menu_tab" not in st.session_state:
+    st.session_state.menu_tab = "🛒 Billing"
+
+# 🌟 Large & Clear Clickable Menu Buttons for Mobile
+m1, m2, m3, m4 = st.columns(4)
+with m1:
+    if st.button("🛒 Billing", key="btn_bill"):
+        st.session_state.menu_tab = "🛒 Billing"
+        st.rerun()
+with m2:
+    if st.button("📦 Stock", key="btn_stock"):
+        st.session_state.menu_tab = "📦 Stock"
+        st.rerun()
+with m3:
+    if st.button("📖 Udhar", key="btn_udhar"):
+        st.session_state.menu_tab = "📖 Udhar"
+        st.rerun()
+with m4:
+    if st.button("📊 Records", key="btn_records"):
+        st.session_state.menu_tab = "📊 Records"
+        st.rerun()
 
 st.markdown("---")
 
 # --------------------------------------------------------
 # TAB 1: ESTIMATE & BILLING
 # --------------------------------------------------------
-if selected_tab == "🛒 Billing":
+if st.session_state.menu_tab == "🛒 Billing":
     st.subheader("📝 New Customer Estimate & Billing")
     
     if "form_gen" not in st.session_state:
@@ -362,7 +359,7 @@ if selected_tab == "🛒 Billing":
 # --------------------------------------------------------
 # TAB 2: INVENTORY STOCK MANAGEMENT
 # --------------------------------------------------------
-elif selected_tab == "📦 Stock":
+elif st.session_state.menu_tab == "📦 Stock":
     st.subheader("📦 Inventory Stock Management")
     
     with st.form("add_stock_form", clear_on_submit=True):
@@ -392,7 +389,7 @@ elif selected_tab == "📦 Stock":
 # --------------------------------------------------------
 # TAB 3: UDHAR KHATA MANAGEMENT
 # --------------------------------------------------------
-elif selected_tab == "📖 Udhar":
+elif st.session_state.menu_tab == "📖 Udhar":
     st.subheader("📖 Udhar Khata (Pending Dues)")
     
     udhar_df = pd.read_sql("SELECT id, customer_name, customer_mobile, vehicle_number, items_summary, total_bill, amount_paid, balance_due, date FROM sales WHERE balance_due > 0", conn)
@@ -428,7 +425,7 @@ elif selected_tab == "📖 Udhar":
 # --------------------------------------------------------
 # TAB 4: HISTORICAL RECORDS
 # --------------------------------------------------------
-elif selected_tab == "📊 Records":
+elif st.session_state.menu_tab == "📊 Records":
     st.subheader("📊 All Sales & Service Records")
     records_df = pd.read_sql("SELECT id, customer_name, vehicle_number, items_summary, total_bill, amount_paid, balance_due, total_savings, payment_mode, date FROM sales ORDER BY id DESC", conn)
     if not records_df.empty:
