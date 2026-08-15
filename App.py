@@ -98,18 +98,18 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Database Connection
-conn = sqlite3.connect('garage_billing_v7.db', check_same_thread=False)
+# Database Connection (v8 updated to avoid old corrupt table structure)
+conn = sqlite3.connect('garage_billing_v8.db', check_same_thread=False)
 c = conn.cursor()
 
-# Tables Setup with MRP, Selling Price, and Payment Mode
+# Tables Setup with corrected closing bracket
 c.execute('''CREATE TABLE IF NOT EXISTS inventory (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     item_name TEXT,
     mrp REAL,
     selling_price REAL,
     stock INTEGER
-''')
+)''')
 
 c.execute('''CREATE TABLE IF NOT EXISTS bills (
     bill_id TEXT,
@@ -122,7 +122,7 @@ c.execute('''CREATE TABLE IF NOT EXISTS bills (
     date TEXT,
     items TEXT,
     total_savings REAL
-''')
+)''')
 conn.commit()
 
 # Top Header Layout
@@ -303,3 +303,4 @@ with tab3:
         st.dataframe(bills_df, use_container_width=True)
     else:
         st.info("No bill records found.")
+                                         
