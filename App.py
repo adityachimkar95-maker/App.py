@@ -12,13 +12,12 @@ st.set_page_config(
     page_icon="🏎️"
 )
 
-# 🌟 Clean White Modern Styling (CSS)
+# 🌟 High Visibility White Theme Styling (CSS)
 st.markdown("""
     <style>
-    /* Global App Theme - Pure White */
     .stApp {
         background: #f8fafc;
-        color: #1e293b;
+        color: #0f172a;
         font-family: 'Inter', sans-serif;
     }
     
@@ -26,11 +25,10 @@ st.markdown("""
     footer {visibility: hidden;}
     header {visibility: hidden;}
 
-    /* White Glassmorphism Header Card */
     .hero-card {
         background: #ffffff;
-        border: 1px solid #e2e8f0;
-        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+        border: 1px solid #cbd5e1;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
         border-radius: 16px;
         padding: 20px;
         margin-bottom: 20px;
@@ -44,18 +42,35 @@ st.markdown("""
         margin: 0;
     }
     .hero-sub {
-        color: #64748b;
+        color: #475569;
         font-size: 13px;
         margin-top: 5px;
     }
 
-    /* Inputs Styling for White Theme */
-    .stTextInput>div>div>input, .stSelectbox>div>div>div, .stNumberInput>div>div>input {
+    /* Force clear dark text inside all input fields */
+    .stTextInput input, .stNumberInput input {
         background-color: #ffffff !important;
-        color: #1e293b !important;
-        border: 1px solid #cbd5e1 !important;
-        border-radius: 10px !important;
+        color: #0f172a !important;
+        -webkit-text-fill-color: #0f172a !important;
+        border: 1.5px solid #94a3b8 !important;
+        border-radius: 8px !important;
         padding: 10px !important;
+        font-weight: 700 !important;
+        font-size: 16px !important;
+    }
+    
+    /* Labels visibility */
+    label, .stMarkdown p, span {
+        color: #1e293b !important;
+        font-weight: 600;
+    }
+
+    /* Selectbox Styling */
+    .stSelectbox div[data-baseweb="select"] {
+        background-color: #ffffff !important;
+        color: #0f172a !important;
+        border: 1.5px solid #94a3b8 !important;
+        border-radius: 8px !important;
     }
 
     /* Buttons Styling */
@@ -67,7 +82,8 @@ st.markdown("""
         border: none !important;
         box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
         width: 100%;
-        padding: 10px;
+        padding: 12px;
+        font-size: 16px !important;
     }
 
     /* Tabs Styling */
@@ -79,14 +95,14 @@ st.markdown("""
     }
     .stTabs [data-baseweb="tab"] {
         border-radius: 8px;
-        color: #475569 !important;
-        font-weight: 600;
+        color: #334155 !important;
+        font-weight: 700;
     }
     .stTabs [aria-selected="true"] {
         background: #ffffff !important;
-        color: #d97706 !important;
-        font-weight: 800 !important;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        color: #b45309 !important;
+        font-weight: 900 !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
     </style>
 """, unsafe_allow_html=True)
@@ -215,7 +231,6 @@ with tab1:
         else:
             st.warning("⚠️ कृपया सही पार्ट का नाम और सेलिंग प्राइस दर्ज करें!")
 
-    # Display Cart / Live Preview
     if st.session_state.cart:
         st.markdown("---")
         st.markdown("### 📋 Current Bill Cart")
@@ -400,3 +415,4 @@ with tab4:
         st.dataframe(records_df, use_container_width=True)
     else:
         st.info("कोई पुराना रिकॉर्ड नहीं मिला।")
+    
