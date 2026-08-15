@@ -466,4 +466,6 @@ elif st.session_state.menu_tab == "📊 Records":
         st.dataframe(records_df, use_container_width=True)
     else:
         st.info("कोई पुराना रिकॉर्ड नहीं मिला।")
-        
+  streamlit
+fpdf
+
