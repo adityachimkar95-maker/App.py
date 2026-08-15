@@ -12,7 +12,7 @@ st.set_page_config(
     page_icon="🏎️"
 )
 
-# 🌟 High Visibility White Theme & Clear Menu CSS (Fixed for Mobile Text Visibility)
+# 🌟 Ultra-Modern Advanced CSS with Fixed High-Visibility Mobile Tabs
 st.markdown("""
     <style>
     .stApp {
@@ -26,7 +26,7 @@ st.markdown("""
     header {visibility: hidden;}
 
     .hero-card {
-        background: #ffffff;
+        background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
         border: 1px solid #cbd5e1;
         box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
         border-radius: 16px;
@@ -97,28 +97,29 @@ st.markdown("""
         font-size: 16px !important;
     }
 
-    /* Extremely Clear Menu / Tabs Styling for Mobile - Showing Full Names */
+    /* 🌟 PERFECT MOBILE TABS FIX (Showing All Names Clearly) */
     .stTabs [data-baseweb="tab-list"] {
         display: flex;
-        flex-wrap: nowrap;
-        gap: 4px;
-        background: #cbd5e1;
-        padding: 6px;
-        border-radius: 12px;
+        gap: 6px;
+        background: #e2e8f0;
+        padding: 8px;
+        border-radius: 14px;
         overflow-x: auto;
     }
     .stTabs [data-baseweb="tab"] {
         flex: 1;
-        min-width: 75px;
-        height: 48px;
-        border-radius: 8px;
-        color: #0f172a !important;
-        -webkit-text-fill-color: #0f172a !important;
-        font-weight: 900 !important;
+        min-width: 80px;
+        height: 45px;
+        border-radius: 10px;
+        color: #1e293b !important;
+        -webkit-text-fill-color: #1e293b !important;
+        font-weight: 800 !important;
         font-size: 13px !important;
         background: #ffffff;
+        border: 1px solid #cbd5e1;
+        display: flex;
+        align-items: center;
         justify-content: center;
-        border: 1px solid #94a3b8;
     }
     .stTabs [aria-selected="true"] {
         background: #d97706 !important;
@@ -126,7 +127,7 @@ st.markdown("""
         -webkit-text-fill-color: #ffffff !important;
         font-weight: 900 !important;
         border: 1px solid #b45309 !important;
-        box-shadow: 0 4px 10px rgba(217, 119, 6, 0.4);
+        box-shadow: 0 4px 12px rgba(217, 119, 6, 0.4);
     }
     </style>
 """, unsafe_allow_html=True)
@@ -134,7 +135,7 @@ st.markdown("""
 # --------------------------------------------------------
 # DATABASE SETUP
 # --------------------------------------------------------
-conn = sqlite3.connect("autoparts_shop_v5.db", check_same_thread=False)
+conn = sqlite3.connect("autoparts_shop_v6.db", check_same_thread=False)
 cursor = conn.cursor()
 
 cursor.execute('''
@@ -190,13 +191,23 @@ with tab1:
     if "form_gen" not in st.session_state:
         st.session_state.form_gen = 0
 
-    col_c1, col_c2 = st.columns(2)
-    with col_c1:
-        c_name = st.text_input("Customer Name", value="", placeholder="कस्टमर का नाम लिखें...", key=f"c_name_{st.session_state.form_gen}")
-        c_mobile = st.text_input("Customer Mobile Number", value="", placeholder="मोबाइल नंबर लिखें...", key=f"c_mobile_{st.session_state.form_gen}")
-    with col_c2:
-        v_number = st.text_input("Vehicle Number", value="", placeholder="गाड़ी नंबर (उदा. MH19...)", key=f"v_num_{st.session_state.form_gen}").upper()
-        v_model = st.text_input("Vehicle Model", value="", placeholder="गाड़ी का मॉडल (उदा. Splendor)", key=f"v_model_{st.session_state.form_gen}")
+    # 🌟 Advanced Feature: Quick Sale / No Bill Option
+    no_bill_mode = st.checkbox("⚡ Quick Direct Sale (जिसे बिल नहीं चाहिए / सीधा काउंटर बिक्री)", value=False, key=f"nobill_{st.session_state.form_gen}")
+
+    if not no_bill_mode:
+        col_c1, col_c2 = st.columns(2)
+        with col_c1:
+            c_name = st.text_input("Customer Name", value="", placeholder="कस्टमर का नाम लिखें...", key=f"c_name_{st.session_state.form_gen}")
+            c_mobile = st.text_input("Customer Mobile Number", value="", placeholder="मोबाइल नंबर लिखें...", key=f"c_mobile_{st.session_state.form_gen}")
+        with col_c2:
+            v_number = st.text_input("Vehicle Number", value="", placeholder="गाड़ी नंबर (उदा. MH19...)", key=f"v_num_{st.session_state.form_gen}").upper()
+            v_model = st.text_input("Vehicle Model", value="", placeholder="गाड़ी का मॉडल (उदा. Splendor)", key=f"v_model_{st.session_state.form_gen}")
+    else:
+        c_name = "Counter Cash Customer"
+        c_mobile = ""
+        v_number = "NA"
+        v_model = "Counter Sale"
+        st.info("⚡ क्विक मोड चालू है: कस्टमर डिटेल्स की आवश्यकता नहीं है, सीधे बिल बनाएं और स्टॉक माइनस करें।")
 
     if "cart" not in st.session_state:
         st.session_state.cart = []
@@ -303,7 +314,7 @@ with tab1:
         balance_due = max(0.0, total_bill - amount_paid)
         
         if st.button("💾 Save & Generate Bill Slip"):
-            if not c_name or not v_number:
+            if not no_bill_mode and (not c_name or not v_number):
                 st.warning("⚠️ कृपया कस्टमर का नाम और गाड़ी नंबर दर्ज करें।")
             else:
                 current_date = datetime.now().strftime("%d-%m-%Y %I:%M %p")
@@ -325,11 +336,12 @@ with tab1:
 
                 conn.commit()
                 
-                st.success(f"✅ बिल सेव हो गया और स्टॉक से सामान माइनस कर दिया गया! ID: #{sale_id}")
+                st.success(f"✅ बिक्री सफलतापूर्वक सेव हो गई और स्टॉक अपडेट कर दिया गया! ID: #{sale_id}")
                 
-                formatted_items = "\n".join([f"{idx+1}. {item['name']} (x{item['qty']}) = ₹{item['total']:.2f}" for idx, item in enumerate(st.session_state.cart)])
-                
-                slip_text = f"""🏎️ *MY SHIVSHAKTI AUTO PARTS & SERVICE*
+                if not no_bill_mode:
+                    formatted_items = "\n".join([f"{idx+1}. {item['name']} (x{item['qty']}) = ₹{item['total']:.2f}" for idx, item in enumerate(st.session_state.cart)])
+                    
+                    slip_text = f"""🏎️ *MY SHIVSHAKTI AUTO PARTS & SERVICE*
 📍 Main Road, Rantham, Chikhli, Malkapur (MH)
 📞 9158551896
 -----------------------------------
@@ -350,17 +362,17 @@ with tab1:
 -----------------------------------
 🙏 *धन्यवाद! फिर पधारें।*"""
 
-                clean_mobile = c_mobile.replace("+", "").replace(" ", "")
-                if len(clean_mobile) == 10:
-                    clean_mobile = "91" + clean_mobile
-                
-                col_s1, col_s2 = st.columns(2)
-                with col_s1:
-                    wa_link = f"https://wa.me/{clean_mobile}?text={urllib.parse.quote(slip_text)}"
-                    st.link_button("📲 Share via WhatsApp", wa_link)
-                with col_s2:
-                    sms_link = f"sms:{c_mobile}?body={urllib.parse.quote(slip_text)}"
-                    st.link_button("💬 Share via SMS", sms_link)
+                    clean_mobile = c_mobile.replace("+", "").replace(" ", "")
+                    if len(clean_mobile) == 10:
+                        clean_mobile = "91" + clean_mobile
+                    
+                    col_s1, col_s2 = st.columns(2)
+                    with col_s1:
+                        wa_link = f"https://wa.me/{clean_mobile}?text={urllib.parse.quote(slip_text)}"
+                        st.link_button("📲 Share via WhatsApp", wa_link)
+                    with col_s2:
+                        sms_link = f"sms:{c_mobile}?body={urllib.parse.quote(slip_text)}"
+                        st.link_button("💬 Share via SMS", sms_link)
                 
                 st.session_state.cart = []
                 st.session_state.form_gen += 1
@@ -442,4 +454,4 @@ with tab4:
         st.dataframe(records_df, use_container_width=True)
     else:
         st.info("कोई पुराना रिकॉर्ड नहीं मिला।")
-    
+                    
