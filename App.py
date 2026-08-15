@@ -12,7 +12,7 @@ st.set_page_config(
     page_icon="🏎️"
 )
 
-# 🌟 High Visibility White Theme & Clear Menu CSS
+# 🌟 High Visibility White Theme & Clear Menu CSS (Fixed for Mobile Text Visibility)
 st.markdown("""
     <style>
     .stApp {
@@ -71,23 +71,37 @@ st.markdown("""
         border-radius: 8px !important;
     }
 
+    /* Force Bright and Clear Button Text */
     .stButton>button {
         background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
         color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
         border-radius: 10px !important;
-        font-weight: 800 !important;
+        font-weight: 900 !important;
         border: none !important;
-        box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+        box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
+        width: 100%;
+        padding: 12px;
+        font-size: 16px !important;
+    }
+    
+    .stFormSubmitButton>button {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+        color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
+        border-radius: 10px !important;
+        font-weight: 900 !important;
+        border: none !important;
         width: 100%;
         padding: 12px;
         font-size: 16px !important;
     }
 
-    /* Extremely Clear Menu / Tabs Styling for Mobile */
+    /* Extremely Clear Menu / Tabs Styling for Mobile - Showing Full Names */
     .stTabs [data-baseweb="tab-list"] {
         display: flex;
         flex-wrap: nowrap;
-        gap: 6px;
+        gap: 4px;
         background: #cbd5e1;
         padding: 6px;
         border-radius: 12px;
@@ -95,12 +109,13 @@ st.markdown("""
     }
     .stTabs [data-baseweb="tab"] {
         flex: 1;
-        min-width: 90px;
-        height: 45px;
+        min-width: 75px;
+        height: 48px;
         border-radius: 8px;
         color: #0f172a !important;
-        font-weight: 800 !important;
-        font-size: 14px !important;
+        -webkit-text-fill-color: #0f172a !important;
+        font-weight: 900 !important;
+        font-size: 13px !important;
         background: #ffffff;
         justify-content: center;
         border: 1px solid #94a3b8;
@@ -108,6 +123,7 @@ st.markdown("""
     .stTabs [aria-selected="true"] {
         background: #d97706 !important;
         color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
         font-weight: 900 !important;
         border: 1px solid #b45309 !important;
         box-shadow: 0 4px 10px rgba(217, 119, 6, 0.4);
@@ -171,7 +187,6 @@ tab1, tab2, tab3, tab4 = st.tabs(["🛒 Billing", "📦 Stock", "📖 Udhar", "�
 with tab1:
     st.subheader("📝 New Customer Estimate & Billing")
     
-    # Session state key manager to force blank fields after saving bill
     if "form_gen" not in st.session_state:
         st.session_state.form_gen = 0
 
@@ -347,7 +362,6 @@ with tab1:
                     sms_link = f"sms:{c_mobile}?body={urllib.parse.quote(slip_text)}"
                     st.link_button("💬 Share via SMS", sms_link)
                 
-                # Completely wipe out inputs for the next entry
                 st.session_state.cart = []
                 st.session_state.form_gen += 1
                 st.rerun()
@@ -428,4 +442,4 @@ with tab4:
         st.dataframe(records_df, use_container_width=True)
     else:
         st.info("कोई पुराना रिकॉर्ड नहीं मिला।")
-        
+    
