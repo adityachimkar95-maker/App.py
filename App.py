@@ -8,7 +8,7 @@ import urllib.parse
 st.set_page_config(page_title="My Shivshakti Auto Parts & Service", layout="wide", page_icon="🏎️")
 
 # Database Setup
-conn = sqlite3.connect('shivshakti_garage_v2.db', check_same_thread=False)
+conn = sqlite3.connect('shivshakti_garage_v3.db', check_same_thread=False)
 c = conn.cursor()
 
 c.execute('''CREATE TABLE IF NOT EXISTS inventory (
@@ -118,9 +118,9 @@ with tab1:
                 bill_id = f"BILL-{datetime.now().strftime('%Y%m%d%H%M%S')}"
                 date_str = datetime.now().strftime('%Y-%m-%d %H:%M')
                 
-                # Combine work details for display
+                # Fixed formatting variables (Fixed unmatched parenthesis error here)
                 work_details_str = "\n".join([f"- {i['name']} (x{i['qty']})" for i in st.session_state.cart])
-                items_db_str = ", ".join([f"{i['name']} (x{i['qty'])})" for i in st.session_state.cart])
+                items_db_str = ", ".join([f"{i['name']} (x{i['qty']})" for i in st.session_state.cart])
                 
                 c.execute("INSERT INTO bills VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
                           (bill_id, cust_name, phone, vehicle, mechanic, pay_mode, parts_charges, labor_charges, total_bill, paid_amount, pending_udhar, date_str, items_db_str))
@@ -186,4 +186,3 @@ with tab3:
         st.dataframe(bills_df, use_container_width=True)
     else:
         st.info("No bills recorded yet.")
-    
