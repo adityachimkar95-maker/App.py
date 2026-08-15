@@ -3,7 +3,7 @@ import sqlite3
 import pandas as pd
 from datetime import datetime
 import urllib.parse
-import json
+from fpdf import FPDF
 
 # 🎨 Page Configuration (Mobile & Desktop Optimized)
 st.set_page_config(
@@ -25,7 +25,6 @@ st.markdown("""
     footer {visibility: hidden;}
     header {visibility: hidden;}
 
-    /* 🌟 Bright and Clear Top Header for Shop Name */
     .top-header {
         background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
         border: 2px solid #cbd5e1;
@@ -51,7 +50,6 @@ st.markdown("""
         font-weight: 700;
     }
 
-    /* Force clear dark text inside all input fields */
     .stTextInput input, .stNumberInput input {
         background-color: #ffffff !important;
         color: #0f172a !important;
@@ -75,7 +73,6 @@ st.markdown("""
         border-radius: 8px !important;
     }
 
-    /* Force Bright and Clear Button Text */
     .stButton>button, .stFormSubmitButton>button {
         background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
         color: #ffffff !important;
@@ -173,7 +170,6 @@ if st.session_state.menu_tab == "🛒 Billing":
     if "form_gen" not in st.session_state:
         st.session_state.form_gen = 0
 
-    # ⚡ Quick Sale Option
     no_bill_mode = st.checkbox("⚡ Quick Direct Sale (बिना कस्टमर डिटेल के सीधा बिल)", value=False, key=f"nobill_{st.session_state.form_gen}")
 
     if not no_bill_mode:
@@ -317,50 +313,82 @@ if st.session_state.menu_tab == "🛒 Billing":
                     cursor.execute("UPDATE parts SET stock = stock - ? WHERE name = ?", (item['qty'], item['name']))
 
                 conn.commit()
-                
                 st.success(f"✅ बिल सफलतापूर्वक सेव हो गया! ID: #{sale_id}")
                 
-                # 📲 WhatsApp & SMS Sharing Section
-                formatted_items = "\n".join([f"{idx+1}. {item['name']} (x{item['qty']}) = ₹{item['total']:.2f}" for idx, item in enumerate(st.session_state.cart)])
-                
-                slip_text = f"""🏎️ *MY SHIVSHAKTI AUTO PARTS & SERVICE*
+        # 📲 WhatsApp & PDF Sharing Section
+        formatted_items = "\n".join([f"{idx+1}. {item['name']} (x{item['qty']}) = ₹{item['total']:.2f}" for idx, item in enumerate(st.session_state.cart)])
+        
+        slip_text = f"""🏎️ *MY SHIVSHAKTI AUTO PARTS & SERVICE*
 📍 Main Road, Rantham, Chikhli, Malkapur (MH)
 📞 9158551896
 -----------------------------------
 👤 *Customer:* {c_name}
 🚗 *Vehicle:* {v_model} [{v_number}]
-📅 *Date:* {current_date}
+📅 *Date:* {datetime.now().strftime("%d-%m-%Y %I:%M %p")}
 -----------------------------------
 🔧 *Parts List:*
 {formatted_items}
 -----------------------------------
 📦 Parts Total: ₹{parts_total_sum:.2f}
-👨‍🔧 Labour ({labour_desc if labour_desc else 'Service'}): ₹{labour_cost:.2f}
-🎉 *You Saved:* ₹{total_savings:.2f} (MRP Discount)
+👨‍🔧 Labour: ₹{labour_cost:.2f}
+🎉 *You Saved:* ₹{total_savings:.2f}
 -----------------------------------
 💰 *Total Bill:* ₹{total_bill:.2f}
-✅ *Paid Amount:* ₹{amount_paid:.2f}
-🔴 *Pending Udhar:* ₹{balance_due:.2f}
+✅ *Paid:* ₹{amount_paid:.2f}
+🔴 *Pending:* ₹{balance_due:.2f}
 -----------------------------------
 🙏 *धन्यवाद! फिर पधारें।*"""
 
-                st.markdown("### 📤 Share Bill Now")
-                clean_mobile = c_mobile.replace("+", "").replace(" ", "")
-                if len(clean_mobile) == 10:
-                    clean_mobile = "91" + clean_mobile
-                
-                col_s1, col_s2 = st.columns(2)
-                with col_s1:
-                    wa_link = f"https://wa.me/{clean_mobile}?text={urllib.parse.quote(slip_text)}"
-                    st.link_button("📲 Share via WhatsApp", wa_link)
-                with col_s2:
-                    sms_link = f"sms:{c_mobile}?body={urllib.parse.quote(slip_text)}"
-                    st.link_button("💬 Share via SMS", sms_link)
-                
-                if st.button("🔄 Create New Bill (Reset Cart)"):
-                    st.session_state.cart = []
-                    st.session_state.form_gen += 1
-                    st.rerun()
+        st.markdown("### 📤 Share Estimate & PDF")
+        clean_mobile = c_mobile.replace("+", "").replace(" ", "")
+        if len(clean_mobile) == 10:
+            clean_mobile = "91" + clean_mobile
+        
+        col_s1, col_s2 = st.columns(2)
+        with col_s1:
+            wa_link = f"https://wa.me/{clean_mobile}?text={urllib.parse.quote(slip_text)}"
+            st.link_button("📲 Share via WhatsApp", wa_link)
+            
+        with col_s2:
+            def create_pdf(cart_items, total):
+                pdf = FPDF()
+                pdf.add_page()
+                pdf.set_font("Arial", 'B', 14)
+                pdf.cell(200, 10, txt="MY SHIVSHAKTI AUTO PARTS & SERVICE", ln=True, align='C')
+                pdf.set_font("Arial", size=10)
+                pdf.cell(200, 8, txt="Main Road, Rantham, Chikhli, Malkapur (MH) | Ph: 9158551896", ln=True, align='C')
+                pdf.ln(5)
+                pdf.cell(200, 8, txt=f"Customer: {c_name} | Vehicle: {v_number}", ln=True)
+                pdf.cell(200, 8, txt=f"Date: {datetime.now().strftime('%d-%m-%Y %I:%M %p')}", ln=True)
+                pdf.ln(5)
+                pdf.set_font("Arial", 'B', 10)
+                pdf.cell(100, 8, "Item Name", 1)
+                pdf.cell(30, 8, "Qty", 1, align='C')
+                pdf.cell(60, 8, "Total (Rs)", 1, align='R')
+                pdf.ln()
+                pdf.set_font("Arial", size=10)
+                for itm in cart_items:
+                    pdf.cell(100, 8, itm['name'], 1)
+                    pdf.cell(30, 8, str(itm['qty']), 1, align='C')
+                    pdf.cell(60, 8, f"{itm['total']:.2f}", 1, align='R')
+                    pdf.ln()
+                pdf.set_font("Arial", 'B', 11)
+                pdf.cell(130, 10, "Final Bill Amount:", 1)
+                pdf.cell(60, 10, f"Rs. {total:.2f}", 1, align='R')
+                return pdf.output(dest='S').encode('latin-1')
+
+            pdf_bytes = create_pdf(st.session_state.cart, total_bill)
+            st.download_button(
+                label="📄 Download Estimate PDF",
+                data=pdf_bytes,
+                file_name=f"Estimate_{c_name}.pdf",
+                mime="application/pdf"
+            )
+        
+        if st.button("🔄 Create New Bill (Reset Cart)"):
+            st.session_state.cart = []
+            st.session_state.form_gen += 1
+            st.rerun()
 
 # --------------------------------------------------------
 # TAB 2: INVENTORY STOCK MANAGEMENT
@@ -438,4 +466,4 @@ elif st.session_state.menu_tab == "📊 Records":
         st.dataframe(records_df, use_container_width=True)
     else:
         st.info("कोई पुराना रिकॉर्ड नहीं मिला।")
-    
+        
