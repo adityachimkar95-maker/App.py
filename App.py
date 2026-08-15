@@ -2,81 +2,108 @@ import streamlit as st
 import sqlite3
 import pandas as pd
 from datetime import datetime
+import urllib.parse
 
 # Page Configuration
 st.set_page_config(page_title="Pro Garage ERP", layout="wide", page_icon="🏎️")
 
-# 🎨 ULTRA-MODERN 3D CSS STYLING
+# 🎨 CREAM BACKGROUND & RED TEXT CUSTOM CSS
 st.markdown("""
     <style>
-    /* Dark Deep Gradient Background */
+    /* Main App Background (Soft Cream) & Base Text (Dark Red) */
     .stApp {
-        background: radial-gradient(circle at top left, #1e293b, #0f172a, #020617);
-        color: #f8fafc;
+        background-color: #FDFBF7 !important;
+        color: #8B0000 !important;
         font-family: 'Segoe UI', Roboto, sans-serif;
     }
     
-    /* Hide Default Sidebar & Menu */
     section[data-testid="stSidebar"] { display: none; }
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
 
-    /* 3D Glassmorphic Header Container */
+    /* Headers, Labels and Titles in Dark Red */
+    h1, h2, h3, h4, h5, h6, label, p, span, div {
+        color: #8B0000 !important;
+    }
+
+    /* Cream & Red Custom Header Card */
     .header-card {
-        background: rgba(30, 41, 59, 0.7);
-        backdrop-filter: blur(16px);
-        -webkit-backdrop-filter: blur(16px);
-        border: 1px solid rgba(255, 255, 255, 0.125);
-        border-radius: 20px;
-        padding: 24px;
-        margin-bottom: 25px;
-        box-shadow: 0 20px 30px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+        background: #FFFDD0;
+        border: 2px solid #D4AF37;
+        border-radius: 14px;
+        padding: 14px 18px;
+        margin-bottom: 15px;
+        box-shadow: 0 4px 12px rgba(139, 0, 0, 0.1);
     }
     
-    /* 3D Modern Button Styling */
-    .stButton>button {
-        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
-        color: white !important;
-        border-radius: 12px !important;
-        font-weight: 700 !important;
-        font-size: 16px !important;
-        border: 1px solid rgba(255, 255, 255, 0.2) !important;
-        padding: 12px 24px !important;
-        box-shadow: 0 10px 20px rgba(29, 78, 216, 0.35), inset 0 2px 2px rgba(255, 255, 255, 0.3) !important;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    .header-title {
+        color: #B22222 !important;
+        margin: 0;
+        font-size: 22px;
+        font-weight: 800;
+        line-height: 1.2;
     }
-    .stButton>button:hover {
-        transform: translateY(-3px) scale(1.02) !important;
-        box-shadow: 0 15px 25px rgba(29, 78, 216, 0.5), inset 0 2px 2px rgba(255, 255, 255, 0.5) !important;
+    
+    .header-sub {
+        color: #A0522D !important;
+        margin: 4px 0 0 0;
+        font-size: 12px;
     }
 
-    /* 3D Metric Card Styling */
-    .stat-card {
-        background: linear-gradient(145deg, #1e293b, #0f172a);
-        border-radius: 16px;
-        padding: 20px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        box-shadow: 8px 8px 16px #080d1a, -8px -8px 16px #16233e;
+    /* Input Fields Styling (Cream Accent + Red Text) */
+    .stTextInput>div>div>input, .stTextArea>div>div>textarea, .stSelectbox>div>div>div, .stNumberInput>div>div>input {
+        background-color: #FFFDF9 !important;
+        color: #8B0000 !important;
+        border: 1px solid #CD5C5C !important;
+        border-radius: 8px !important;
     }
 
-    /* Custom Style for Tabs Header */
+    /* Tabs Styling (Red & Cream Theme) */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 10px;
-        background: rgba(15, 23, 42, 0.6);
-        padding: 8px;
-        border-radius: 14px;
-        border: 1px solid rgba(255, 255, 255, 0.05);
+        gap: 6px;
+        background: #F5EBE0;
+        padding: 6px;
+        border-radius: 12px;
+        border: 1px solid #E6CCB2;
     }
     .stTabs [data-baseweb="tab"] {
-        border-radius: 10px;
-        color: #94a3b8;
+        border-radius: 8px;
+        color: #8B0000 !important;
         font-weight: 600;
-        padding: 8px 16px;
+        padding: 6px 14px;
+        font-size: 13px;
     }
     .stTabs [aria-selected="true"] {
-        background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
-        color: white !important;
-        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4) !important;
+        background: #8B0000 !important;
+        color: #FFFDD0 !important;
+        box-shadow: 0 4px 10px rgba(139, 0, 0, 0.3) !important;
+    }
+    .stTabs [aria-selected="true"] span {
+        color: #FFFDD0 !important;
+    }
+
+    /* Red Stylish Buttons with Cream Text */
+    .stButton>button {
+        background: linear-gradient(135deg, #B22222 0%, #8B0000 100%) !important;
+        color: #FFFDD0 !important;
+        border-radius: 10px !important;
+        font-weight: 700 !important;
+        font-size: 15px !important;
+        border: none !important;
+        padding: 10px 18px !important;
+        box-shadow: 0 4px 12px rgba(139, 0, 0, 0.3) !important;
+    }
+    .stButton>button span {
+        color: #FFFDD0 !important;
+    }
+
+    /* Stat Box (Cream & Deep Red Border) */
+    .stat-card {
+        background: #FFFDD0;
+        border-radius: 12px;
+        padding: 15px;
+        border: 2px solid #8B0000;
+        box-shadow: 2px 4px 10px rgba(139, 0, 0, 0.15);
     }
     </style>
 """, unsafe_allow_html=True)
@@ -91,7 +118,7 @@ c.execute('''CREATE TABLE IF NOT EXISTS mechanics
              (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, phone TEXT)''')
 c.execute('''CREATE TABLE IF NOT EXISTS garage_profile 
              (id INTEGER PRIMARY KEY DEFAULT 1, name TEXT, address TEXT, phone TEXT, tagline TEXT)''')
-c.execute("INSERT OR IGNORE INTO garage_profile (id, name, address, phone, tagline) VALUES (1, 'MY GARAGE & AUTO SERVICE', 'Main Road, City', '9876543210', 'Best Service Guaranteed')")
+c.execute("INSERT OR IGNORE INTO garage_profile (id, name, address, phone, tagline) VALUES (1, 'MY GARAGE & AUTO SERVICE', 'Malkapur Main Road, Chikhli', '9158551896', 'Best Service Guaranteed')")
 c.execute('''CREATE TABLE IF NOT EXISTS bills 
              (id INTEGER PRIMARY KEY AUTOINCREMENT, customer TEXT, phone TEXT, vehicle TEXT, labor_charge REAL, 
               parts_total REAL, gst_percent REAL, final_total REAL, paid REAL, udhar REAL, date TEXT, 
@@ -101,26 +128,26 @@ conn.commit()
 c.execute("SELECT name, address, phone, tagline FROM garage_profile WHERE id = 1")
 g_name, g_address, g_phone, g_tagline = c.fetchone()
 
-# 🏎️ 3D Header Banner
+# 🏎️ Cream & Red Header Banner
 st.markdown(f"""
 <div class="header-card">
     <div style="display:flex; justify-content:space-between; align-items:center;">
         <div>
-            <h1 style='color: #60a5fa; margin:0; font-size: 32px; font-weight:800; letter-spacing: -0.5px;'>✨ {g_name}</h1>
-            <p style='color: #94a3b8; margin:6px 0 0 0; font-size:14px;'>📍 {g_address} &nbsp;|&nbsp; 📞 {g_phone} &nbsp;|&nbsp; <i>{g_tagline}</i></p>
+            <h1 class="header-title">🏎️ {g_name}</h1>
+            <p class="header-sub">📍 {g_address} &nbsp;|&nbsp; 📞 {g_phone}</p>
         </div>
-        <div style="background: rgba(59, 130, 246, 0.15); padding: 10px 18px; border-radius: 30px; border: 1px solid rgba(59, 130, 246, 0.3);">
-            <span style="color:#60a5fa; font-weight:700;">PRO ERP v3.0</span>
+        <div style="background: #8B0000; padding: 6px 12px; border-radius: 20px;">
+            <span style="color:#FFFDD0 !important; font-weight:700; font-size:11px;">PRO v3.0</span>
         </div>
     </div>
 </div>
 """, unsafe_allow_html=True)
 
-# 📌 Top 3D Navigation Tabs
+# 📌 Navigation Tabs
 tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
-    "⚡ Quick Billing", 
-    "📦 Stock & Orders", 
-    "🔴 Udhar Khata", 
+    "⚡ Bill", 
+    "📦 Stock", 
+    "🔴 Udhar", 
     "👨‍🔧 Mechanics", 
     "📜 History", 
     "⚙️ Profile"
@@ -128,7 +155,7 @@ tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
 
 # ----------------- 1. QUICK BILLING -----------------
 with tab1:
-    st.subheader("📝 Create New Bill / Job Sheet")
+    st.subheader("📝 New Bill / Job Sheet")
     
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -141,7 +168,7 @@ with tab1:
         mech_list = [m[0] for m in c.fetchall()]
         selected_mech = st.selectbox("Assigned Mechanic", mech_list if mech_list else ["Default"])
 
-    work_desc = st.text_area("🔧 Services Performed / Work Details", placeholder="Example: Engine Oil Change, Washing, Brake Pad Replacement...")
+    work_desc = st.text_area("🔧 Services Performed / Work Details", placeholder="Example: Engine Oil Change, Washing...")
 
     st.divider()
     
@@ -164,7 +191,7 @@ with tab1:
         gst_percent = st.selectbox("GST Rate (%)", [0, 5, 12, 18, 28])
         gst_amount = (subtotal * gst_percent) / 100
         final_total = subtotal + gst_amount
-        st.markdown(f"<div class='stat-card'><h3 style='color: #4ade80; margin:0;'>Total Amount: ₹{final_total:.2f}</h3></div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='stat-card'><h3 style='color: #8B0000 !important; margin:0;'>Total Amount: ₹{final_total:.2f}</h3></div>", unsafe_allow_html=True)
 
     with col_b:
         paid = st.number_input("Paid Amount (₹)", min_value=0.0, value=final_total)
@@ -191,11 +218,11 @@ with tab1:
                     f"📍 {g_address}\n"
                     f"📞 {g_phone}\n"
                     f"-----------------------------------\n"
-                    f"👤 *Customer Name:* {cust_name}\n"
+                    f"👤 *Customer:* {cust_name}\n"
                     f"🚘 *Vehicle No:* {vehicle_no}\n"
                     f"📅 *Date:* {date_str}\n"
                     f"-----------------------------------\n"
-                    f"🔧 *Work Details & Services:* \n{work_desc}\n"
+                    f"🔧 *Work Details:* \n{work_desc}\n"
                     f"-----------------------------------\n"
                     f"📦 *Parts Charges:* ₹{parts_cost:.2f}\n"
                     f"👨‍🔧 *Labor Charges:* ₹{labor_charge:.2f}\n"
@@ -203,16 +230,16 @@ with tab1:
                     f"✅ *Paid Amount:* ₹{paid:.2f}\n"
                     f"🔴 *Pending Udhar:* ₹{udhar:.2f}\n"
                     f"-----------------------------------\n"
-                    f"🙏 *धन्यवाद! आप हमारे यहाँ बार-बार आएं।*\n"
-                    f"आपका दिन शुभ हो! ✨"
+                    f"🙏 *धन्यवाद! आप हमारे यहाँ बार-बार आएं।*"
                 )
                 
-                wa_url = f"https://wa.me/{cust_phone}?text={msg.replace(' ', '%20').replace('\n', '%0A')}"
+                encoded_msg = urllib.parse.quote(msg)
+                wa_url = f"https://wa.me/{cust_phone}?text={encoded_msg}"
                 st.markdown(f"[📲 **Click Here to Send WhatsApp Bill**]({wa_url})", unsafe_allow_html=True)
 
 # ----------------- 2. STOCK & CUSTOM ORDERS -----------------
 with tab2:
-    st.subheader("📦 Inventory & Supplier Order Manager")
+    st.subheader("📦 Inventory & Supplier Orders")
     
     with st.expander("➕ Add New Spare Part"):
         p_name = st.text_input("Part Name")
@@ -229,7 +256,7 @@ with tab2:
 
     st.divider()
     
-    st.subheader("🛍️ Create Custom Supplier Order")
+    st.subheader("🛍️ Create Supplier Order")
     c.execute("SELECT name, stock FROM inventory")
     all_inventory = c.fetchall()
     
@@ -249,7 +276,8 @@ with tab2:
             supplier_phone = st.text_input("Supplier WhatsApp Number (e.g. 919876543210)")
             
             if supplier_phone:
-                order_wa_url = f"https://wa.me/{supplier_phone}?text={order_text.replace(' ', '%20').replace('\n', '%0A')}"
+                encoded_order_msg = urllib.parse.quote(order_text)
+                order_wa_url = f"https://wa.me/{supplier_phone}?text={encoded_order_msg}"
                 st.markdown(f"[📲 **Share Order via WhatsApp**]({order_wa_url})", unsafe_allow_html=True)
 
     st.divider()
