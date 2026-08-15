@@ -12,7 +12,7 @@ st.set_page_config(
     page_icon="🏎️"
 )
 
-# 🌟 High Visibility White Theme & Clear Menu CSS
+# 🌟 Advanced UI Styling for Clear Visibility
 st.markdown("""
     <style>
     .stApp {
@@ -25,26 +25,30 @@ st.markdown("""
     footer {visibility: hidden;}
     header {visibility: hidden;}
 
-    .hero-card {
-        background: #ffffff;
-        border: 1px solid #cbd5e1;
-        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
-        border-radius: 16px;
-        padding: 15px;
+    /* 🌟 Bright and Clear Top Header for Shop Name */
+    .top-header {
+        background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+        border: 2px solid #cbd5e1;
+        border-bottom: 4px solid #f59e0b;
+        padding: 18px 10px;
         margin-bottom: 15px;
         text-align: center;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     }
-    .hero-title {
+    .top-title {
         color: #d97706;
-        font-size: 20px;
-        font-weight: 800;
+        font-size: 21px;
+        font-weight: 900;
         text-transform: uppercase;
         margin: 0;
+        letter-spacing: 0.5px;
     }
-    .hero-sub {
-        color: #475569;
-        font-size: 12px;
-        margin-top: 5px;
+    .top-sub {
+        color: #334155;
+        font-size: 13px;
+        margin-top: 6px;
+        font-weight: 700;
     }
 
     /* Force clear dark text inside all input fields */
@@ -71,46 +75,18 @@ st.markdown("""
         border-radius: 8px !important;
     }
 
-    .stButton>button {
+    /* Force Bright and Clear Button Text */
+    .stButton>button, .stFormSubmitButton>button {
         background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
         color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
         border-radius: 10px !important;
-        font-weight: 800 !important;
-        border: none !important;
-        box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
-        width: 100%;
-        padding: 12px;
-        font-size: 16px !important;
-    }
-
-    /* Extremely Clear Menu / Tabs Styling for Mobile */
-    .stTabs [data-baseweb="tab-list"] {
-        display: flex;
-        flex-wrap: nowrap;
-        gap: 6px;
-        background: #cbd5e1;
-        padding: 6px;
-        border-radius: 12px;
-        overflow-x: auto;
-    }
-    .stTabs [data-baseweb="tab"] {
-        flex: 1;
-        min-width: 90px;
-        height: 45px;
-        border-radius: 8px;
-        color: #0f172a !important;
-        font-weight: 800 !important;
-        font-size: 14px !important;
-        background: #ffffff;
-        justify-content: center;
-        border: 1px solid #94a3b8;
-    }
-    .stTabs [aria-selected="true"] {
-        background: #d97706 !important;
-        color: #ffffff !important;
         font-weight: 900 !important;
-        border: 1px solid #b45309 !important;
-        box-shadow: 0 4px 10px rgba(217, 119, 6, 0.4);
+        border: none !important;
+        box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
+        width: 100%;
+        padding: 10px 2px;
+        font-size: 13px !important;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -118,7 +94,7 @@ st.markdown("""
 # --------------------------------------------------------
 # DATABASE SETUP
 # --------------------------------------------------------
-conn = sqlite3.connect("autoparts_shop_v5.db", check_same_thread=False)
+conn = sqlite3.connect("autoparts_shop_v12.db", check_same_thread=False)
 cursor = conn.cursor()
 
 cursor.execute('''
@@ -154,40 +130,72 @@ cursor.execute('''
 conn.commit()
 
 # --------------------------------------------------------
-# UI HEADER
+# UI TOP HEADER
 # --------------------------------------------------------
 st.markdown("""
-    <div class="hero-card">
-        <p class="hero-title">🏎️ MY SHIVSHAKTI AUTO PARTS & SERVICE</p>
-        <p class="hero-sub">📍 Main Road, Rantham, Chikhli, Malkapur (MH) | 📞 9158551896</p>
+    <div class="top-header">
+        <p class="top-title">🏎️ MY SHIVSHAKTI AUTO PARTS & SERVICE</p>
+        <p class="top-sub">📍 Main Road, Rantham, Chikhli, Malkapur (MH) &nbsp;|&nbsp; 📞 9158551896</p>
     </div>
 """, unsafe_allow_html=True)
 
-tab1, tab2, tab3, tab4 = st.tabs(["🛒 Billing", "📦 Stock", "📖 Udhar", "📊 Records"])
+# 🌟 Session State for Menu Selection
+if "menu_tab" not in st.session_state:
+    st.session_state.menu_tab = "🛒 Billing"
+
+# 🌟 Horizontal Navigation Buttons in a Single Row
+m1, m2, m3, m4 = st.columns(4)
+with m1:
+    if st.button("🛒 Billing", key="btn_bill"):
+        st.session_state.menu_tab = "🛒 Billing"
+        st.rerun()
+with m2:
+    if st.button("📦 Stock", key="btn_stock"):
+        st.session_state.menu_tab = "📦 Stock"
+        st.rerun()
+with m3:
+    if st.button("📖 Udhar", key="btn_udhar"):
+        st.session_state.menu_tab = "📖 Udhar"
+        st.rerun()
+with m4:
+    if st.button("📊 Records", key="btn_records"):
+        st.session_state.menu_tab = "📊 Records"
+        st.rerun()
+
+st.markdown("---")
 
 # --------------------------------------------------------
 # TAB 1: ESTIMATE & BILLING
 # --------------------------------------------------------
-with tab1:
+if st.session_state.menu_tab == "🛒 Billing":
     st.subheader("📝 New Customer Estimate & Billing")
     
-    # Session state key manager to force blank fields after saving bill
     if "form_gen" not in st.session_state:
         st.session_state.form_gen = 0
 
-    col_c1, col_c2 = st.columns(2)
-    with col_c1:
-        c_name = st.text_input("Customer Name", value="", placeholder="कस्टमर का नाम लिखें...", key=f"c_name_{st.session_state.form_gen}")
-        c_mobile = st.text_input("Customer Mobile Number", value="", placeholder="मोबाइल नंबर लिखें...", key=f"c_mobile_{st.session_state.form_gen}")
-    with col_c2:
-        v_number = st.text_input("Vehicle Number", value="", placeholder="गाड़ी नंबर (उदा. MH19...)", key=f"v_num_{st.session_state.form_gen}").upper()
-        v_model = st.text_input("Vehicle Model", value="", placeholder="गाड़ी का मॉडल (उदा. Splendor)", key=f"v_model_{st.session_state.form_gen}")
+    # ⚡ Quick Sale Option
+    no_bill_mode = st.checkbox("⚡ Quick Direct Sale (बिना कस्टमर डिटेल के सीधा बिल)", value=False, key=f"nobill_{st.session_state.form_gen}")
+
+    if not no_bill_mode:
+        col_c1, col_c2 = st.columns(2)
+        with col_c1:
+            c_name = st.text_input("Customer Name", value="", placeholder="कस्टमर का नाम लिखें...", key=f"c_name_{st.session_state.form_gen}")
+            c_mobile = st.text_input("Customer Mobile Number", value="", placeholder="मोबाइल नंबर लिखें...", key=f"c_mobile_{st.session_state.form_gen}")
+        with col_c2:
+            v_number = st.text_input("Vehicle Number", value="", placeholder="गाड़ी नंबर (उदा. MH19...)", key=f"v_num_{st.session_state.form_gen}").upper()
+            v_model = st.text_input("Vehicle Model", value="", placeholder="गाड़ी का मॉडल (उदा. Splendor)", key=f"v_model_{st.session_state.form_gen}")
+    else:
+        c_name = "Counter Cash Customer"
+        c_mobile = ""
+        v_number = "NA"
+        v_model = "Counter Sale"
+        st.info("⚡ क्विक मोड चालू है: कस्टमर डिटेल्स की आवश्यकता नहीं है।")
 
     if "cart" not in st.session_state:
         st.session_state.cart = []
 
     st.markdown("---")
-    st.markdown("### ➕ Add Items")
+    st.markdown("### ➕ Add Items (MRP & Selling Price)")
     
     inv_df = pd.read_sql("SELECT * FROM parts", conn)
     
@@ -288,7 +296,7 @@ with tab1:
         balance_due = max(0.0, total_bill - amount_paid)
         
         if st.button("💾 Save & Generate Bill Slip"):
-            if not c_name or not v_number:
+            if not no_bill_mode and (not c_name or not v_number):
                 st.warning("⚠️ कृपया कस्टमर का नाम और गाड़ी नंबर दर्ज करें।")
             else:
                 current_date = datetime.now().strftime("%d-%m-%Y %I:%M %p")
@@ -310,8 +318,9 @@ with tab1:
 
                 conn.commit()
                 
-                st.success(f"✅ बिल सेव हो गया और स्टॉक से सामान माइनस कर दिया गया! ID: #{sale_id}")
+                st.success(f"✅ बिल सफलतापूर्वक सेव हो गया! ID: #{sale_id}")
                 
+                # 📲 WhatsApp & SMS Sharing Section
                 formatted_items = "\n".join([f"{idx+1}. {item['name']} (x{item['qty']}) = ₹{item['total']:.2f}" for idx, item in enumerate(st.session_state.cart)])
                 
                 slip_text = f"""🏎️ *MY SHIVSHAKTI AUTO PARTS & SERVICE*
@@ -335,6 +344,7 @@ with tab1:
 -----------------------------------
 🙏 *धन्यवाद! फिर पधारें।*"""
 
+                st.markdown("### 📤 Share Bill Now")
                 clean_mobile = c_mobile.replace("+", "").replace(" ", "")
                 if len(clean_mobile) == 10:
                     clean_mobile = "91" + clean_mobile
@@ -347,15 +357,15 @@ with tab1:
                     sms_link = f"sms:{c_mobile}?body={urllib.parse.quote(slip_text)}"
                     st.link_button("💬 Share via SMS", sms_link)
                 
-                # Completely wipe out inputs for the next entry
-                st.session_state.cart = []
-                st.session_state.form_gen += 1
-                st.rerun()
+                if st.button("🔄 Create New Bill (Reset Cart)"):
+                    st.session_state.cart = []
+                    st.session_state.form_gen += 1
+                    st.rerun()
 
 # --------------------------------------------------------
 # TAB 2: INVENTORY STOCK MANAGEMENT
 # --------------------------------------------------------
-with tab2:
+elif st.session_state.menu_tab == "📦 Stock":
     st.subheader("📦 Inventory Stock Management")
     
     with st.form("add_stock_form", clear_on_submit=True):
@@ -385,7 +395,7 @@ with tab2:
 # --------------------------------------------------------
 # TAB 3: UDHAR KHATA MANAGEMENT
 # --------------------------------------------------------
-with tab3:
+elif st.session_state.menu_tab == "📖 Udhar":
     st.subheader("📖 Udhar Khata (Pending Dues)")
     
     udhar_df = pd.read_sql("SELECT id, customer_name, customer_mobile, vehicle_number, items_summary, total_bill, amount_paid, balance_due, date FROM sales WHERE balance_due > 0", conn)
@@ -421,11 +431,11 @@ with tab3:
 # --------------------------------------------------------
 # TAB 4: HISTORICAL RECORDS
 # --------------------------------------------------------
-with tab4:
+elif st.session_state.menu_tab == "📊 Records":
     st.subheader("📊 All Sales & Service Records")
     records_df = pd.read_sql("SELECT id, customer_name, vehicle_number, items_summary, total_bill, amount_paid, balance_due, total_savings, payment_mode, date FROM sales ORDER BY id DESC", conn)
     if not records_df.empty:
         st.dataframe(records_df, use_container_width=True)
     else:
         st.info("कोई पुराना रिकॉर्ड नहीं मिला।")
-                    
+    
