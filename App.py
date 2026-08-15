@@ -103,188 +103,203 @@ conn = sqlite3.connect('garage_billing_v7.db', check_same_thread=False)
 c = conn.cursor()
 
 # Tables Setup with MRP, Selling Price, and Payment Mode
-c.execute('''CREATE TABLE IF NOT EXISTS inventory 
-             (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, category TEXT, mrp REAL, selling_price REAL, stock INTEGER)''')
-c.execute('''CREATE TABLE IF NOT EXISTS mechanics 
-             (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, phone TEXT)''')
-c.execute('''CREATE TABLE IF NOT EXISTS garage_profile 
-             (id INTEGER PRIMARY KEY DEFAULT 1, name TEXT, address TEXT, phone TEXT, tagline TEXT)''')
-c.execute("INSERT OR IGNORE INTO garage_profile (id, name, address, phone, tagline) VALUES (1, 'MY AUTO SERVICE CENTER', 'Main Road, City', '9158551896', 'Best Service Guaranteed')")
-c.execute('''CREATE TABLE IF NOT EXISTS bills 
-             (id INTEGER PRIMARY KEY AUTOINCREMENT, customer TEXT, phone TEXT, vehicle TEXT, labor_charge REAL, 
-              parts_total REAL, final_total REAL, paid REAL, udhar REAL, payment_mode TEXT, date TEXT, 
-              mechanic TEXT, work_details TEXT)''')
+c.execute('''CREATE TABLE IF NOT EXISTS inventory (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    item_name TEXT,
+    mrp REAL,
+    selling_price REAL,
+    stock INTEGER
+''')
+
+c.execute('''CREATE TABLE IF NOT EXISTS bills (
+    bill_id TEXT,
+    customer_name TEXT,
+    phone TEXT,
+    vehicle TEXT,
+    total REAL,
+    udhar REAL,
+    payment_mode TEXT,
+    date TEXT,
+    items TEXT,
+    total_savings REAL
+''')
 conn.commit()
 
-c.execute("SELECT name, address, phone, tagline FROM garage_profile WHERE id = 1")
-g_name, g_address, g_phone, g_tagline = c.fetchone()
-
-# Header Banner
-st.markdown(f"""
-<div class="header-card">
-    <div>
-        <h1 class="header-title">🏎️ {g_name}</h1>
-        <p class="header-sub">📍 {g_address} &nbsp;|&nbsp; 📞 {g_phone}</p>
+# Top Header Layout
+st.markdown("""
+    <div class="header-card">
+        <div>
+            <p class="header-title">🏎️ Pro Garage ERP</p>
+            <p class="header-sub">Mobile Billing & Inventory System</p>
+        </div>
     </div>
-    <div style="background: rgba(245, 158, 11, 0.15); padding: 3px 6px; border-radius: 5px; border: 1px solid rgba(245, 158, 11, 0.4);">
-        <span style="color:#fbbf24; font-weight:800; font-size:9px;">PRO v4.0</span>
-    </div>
-</div>
 """, unsafe_allow_html=True)
 
-# Navigation Tabs
-tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
-    "⚡ Bill", 
-    "📦 Stock", 
-    "🔴 Udhar", 
-    "👨‍🔧 Team", 
-    "📊 Reports", 
-    "⚙️ Profile"
-])
+# App Navigation Tabs
+tab1, tab2, tab3 = st.tabs(["📝 Billing", "📦 Inventory", "📊 Records"])
 
-# ----------------- 1. QUICK BILLING -----------------
 with tab1:
-    st.subheader("📝 New Bill / Job Sheet")
+    st.subheader("New Service Bill")
     
-    cust_name = st.text_input("Customer Name")
-    cust_phone = st.text_input("WhatsApp Number (e.g. 919876543210)")
-    vehicle_no = st.text_input("Vehicle Number").upper()
-    
-    c.execute("SELECT name FROM mechanics")
-    mech_list = [m[0] for m in c.fetchall()]
-    selected_mech = st.selectbox("Assigned Mechanic", mech_list if mech_list else ["Default"])
+    col1, col2 = st.columns(2)
+    with col1:
+        customer_name = st.text_input("Customer Name")
+        phone = st.text_input("Phone Number", value="91")
+    with col2:
+        vehicle_number = st.text_input("Vehicle Number")
+        payment_mode = st.selectbox("Payment Mode", ["Cash", "Online/UPI", "Udhar (Credit)"])
 
-    work_desc = st.text_area("🔧 Work Details", placeholder="Engine Oil Change, Washing...")
+    st.markdown("---")
+    st.markdown("### Add Items / Services")
+    
+    # Fetch inventory items
+    c.execute("SELECT item_name, mrp, selling_price, stock FROM inventory")
+    inventory_items = c.fetchall()
+    item_options = {row[0]: {"mrp": row[1], "price": row[2], "stock": row[3]} for row in inventory_items}
+    
+    if "cart" not in st.session_state:
+        st.session_state.cart = []
 
-    st.divider()
-    
-    # Inventory parts selection using Selling Price
-    parts_db = pd.read_sql("SELECT name, selling_price FROM inventory WHERE stock > 0", conn)
-    parts_cost = 0.0
-    items = []
-    
-    if not parts_db.empty:
-        part_dict = dict(zip(parts_db['name'], parts_db['selling_price']))
-        items = st.multiselect("📦 Select Spare Parts Used", list(part_dict.keys()))
-        for item in items:
-            parts_cost += part_dict[item]
-    
-    labor_charge = st.number_input("Labor Charges (₹)", min_value=0.0, value=0.0)
-    final_total = parts_cost + labor_charge
-    
-    col_p1, col_p2 = st.columns(2)
-    pay_mode = col_p1.selectbox("Payment Mode", ["Cash", "UPI/Online", "Udhar"])
-    paid = col_p2.number_input("Paid Amount (₹)", min_value=0.0, value=final_total)
-    udhar = final_total - paid
-    
-    st.markdown(f"<div class='stat-card'><h4 style='color: #4ade80; margin:0;'>Total: ₹{final_total:.2f} | Udhar: ₹{udhar:.2f}</h4></div>", unsafe_allow_html=True)
-    st.write("")
+    with st.form("add_item_form", clear_on_submit=True):
+        selected_item = st.selectbox("Select Item/Service", ["-- Custom Item --"] + list(item_options.keys()))
+        
+        col_a, col_b, col_c = st.columns(3)
+        with col_a:
+            custom_name = st.text_input("Custom Item Name")
+        with col_b:
+            item_mrp = st.number_input("MRP (₹)", min_value=0.0, value=0.0, step=10.0)
+        with col_c:
+            item_price = st.number_input("Selling Price (₹)", min_value=0.0, value=0.0, step=10.0)
+            
+        col_d, col_e = st.columns(2)
+        with col_d:
+            qty = st.number_input("Quantity", min_value=1, value=1)
+        with col_e:
+            add_btn = st.form_submit_button("Add to Bill")
+            
+        if add_btn:
+            name_to_add = custom_name if selected_item == "-- Custom Item --" and custom_name else selected_item
+            if name_to_add and name_to_add != "-- Custom Item --":
+                final_mrp = item_mrp if selected_item == "-- Custom Item --" else item_options.get(selected_item, {}).get("mrp", item_mrp)
+                final_price = item_price if selected_item == "-- Custom Item --" else item_options.get(selected_item, {}).get("price", item_price)
+                
+                st.session_state.cart.append({
+                    "name": name_to_add,
+                    "mrp": final_mrp,
+                    "price": final_price,
+                    "qty": qty
+                })
+                st.success(f"Added {name_to_add} to bill!")
+                st.rerun()
 
-    if st.button("💾 Save Bill & Share WhatsApp"):
-        if not cust_name or not vehicle_no:
-            st.error("Please enter Customer Name and Vehicle Number!")
-        else:
-            date_str = datetime.now().strftime("%Y-%m-%d %H:%M")
-            c.execute('''INSERT INTO bills (customer, phone, vehicle, labor_charge, parts_total, final_total, paid, udhar, payment_mode, date, mechanic, work_details) 
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-                      (cust_name, cust_phone, vehicle_no, labor_charge, parts_cost, final_total, paid, udhar, pay_mode, date_str, selected_mech, work_desc))
+    # Display Cart / Items added
+    if st.session_state.cart:
+        st.markdown("### Current Bill Items")
+        total_amount = 0
+        total_mrp_sum = 0
+        item_details_list = []
+        
+        for idx, item in enumerate(st.session_state.cart):
+            subtotal = item["price"] * item["qty"]
+            sub_mrp = item["mrp"] * item["qty"]
+            total_amount += subtotal
+            total_mrp_sum += sub_mrp
             
-            for item in items:
-                c.execute("UPDATE inventory SET stock = stock - 1 WHERE name = ?", (item,))
-            conn.commit()
+            item_details_list.append(f"- {item['name']} (x{item['qty']}): ₹{subtotal:.2f}")
             
-            st.success("✅ Bill Saved Successfully!")
-            
-            msg = (
-                f"🏎️ *{g_name}*\n"
-                f"📍 {g_address}\n📞 {g_phone}\n"
-                f"-----------------------------------\n"
-                f"👤 *Customer:* {cust_name}\n🚘 *Vehicle:* {vehicle_no}\n"
-                f"📅 *Date:* {date_str}\n"
-                f"-----------------------------------\n"
-                f"🔧 *Work:* \n{work_desc}\n"
-                f"-----------------------------------\n"
-                f"📦 *Parts:* ₹{parts_cost:.2f}\n"
-                f"👨‍🔧 *Labor:* ₹{labor_charge:.2f}\n"
-                f"💰 *Total:* ₹{final_total:.2f}\n"
-                f"💳 *Mode:* {pay_mode}\n"
-                f"✅ *Paid:* ₹{paid:.2f} | 🔴 *Udhar:* ₹{udhar:.2f}\n"
-                f"-----------------------------------\n"
-                f"🙏 *धन्यवाद! फिर आएं।*"
-            )
-            
-            encoded_msg = urllib.parse.quote(msg)
-            wa_url = f"https://wa.me/{cust_phone}?text={encoded_msg}"
-            st.markdown(f"[📲 **Send WhatsApp Bill**]({wa_url})", unsafe_allow_html=True)
+            col_x, col_y, col_z = st.columns([3, 2, 1])
+            with col_x:
+                st.write(f"**{item['name']}** x {item['qty']}")
+            with col_y:
+                st.write(f"₹{subtotal:.2f} (MRP: ₹{sub_mrp:.2f})")
+            with col_z:
+                if st.button("❌", key=f"del_{idx}"):
+                    st.session_state.cart.pop(idx)
+                    st.rerun()
+                    
+        total_savings = total_mrp_sum - total_amount
+        if total_savings < 0:
+            total_savings = 0.0
 
-# ----------------- 2. STOCK & INVENTORY -----------------
+        udhar_amount = total_amount if payment_mode == "Udhar (Credit)" else 0.0
+
+        st.markdown(f"""
+            <div class="stat-card" style="margin-top: 10px;">
+                <span style="color: #fbbf24; font-size: 16px; font-weight: bold;">Total: ₹{total_amount:.2f} | Udhar: ₹{udhar_amount:.2f}</span><br>
+                <span style="color: #4ade80; font-size: 13px;">🎉 You Saved: ₹{total_savings:.2f} (MRP Discount)</span>
+            </div>
+        """, unsafe_allow_html=True)
+
+        if st.button("💾 Save Bill & Share WhatsApp"):
+            if not customer_name or not vehicle_number:
+                st.warning("Please enter Customer Name and Vehicle Number.")
+            else:
+                bill_id = f"BILL-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+                date_str = datetime.now().strftime('%Y-%m-%d %H:%M')
+                items_str = ", ".join([f"{i['name']} (x{i['qty']})" for i in st.session_state.cart])
+                
+                c.execute("INSERT INTO bills VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                          (bill_id, customer_name, phone, vehicle_number, total_amount, udhar_amount, payment_mode, date_str, items_str, total_savings))
+                conn.commit()
+                
+                st.success("✅ Bill Saved Successfully!")
+                
+                # Create WhatsApp Message with Supermarket-style Savings
+                items_text_wa = "\n".join(item_details_list)
+                wa_message = f"""🛠️ *MY AUTO SERVICE CENTER* 🛠️
+📍 Main Road, City
+📞 09158551896
+----------------------------------------
+👤 *Customer:* {customer_name}
+🚗 *Vehicle:* {vehicle_number}
+📅 *Date:* {date_str}
+----------------------------------------
+🧾 *Bill Details:*
+{items_text_wa}
+----------------------------------------
+💰 *Total Amount:* ₹{total_amount:.2f}
+💳 *Payment Mode:* {payment_mode}
+🎉 *You Saved:* ₹{total_savings:.2f} (MRP पर बचत)
+----------------------------------------
+🙏 Thank you for visiting! Please visit again."""
+
+                encoded_msg = urllib.parse.quote(wa_message)
+                whatsapp_url = f"https://wa.me/{phone}?text={encoded_msg}"
+                
+                st.link_button("📲 Send WhatsApp Bill", whatsapp_url)
+                
+                # Reset cart option
+                if st.button("Clear Cart & Create New Bill"):
+                    st.session_state.cart = []
+                    st.rerun()
+
 with tab2:
-    st.subheader("📦 Inventory Manager")
-    
-    with st.expander("➕ Add New Spare Part"):
-        p_name = st.text_input("Part Name")
-        p_cat = st.selectbox("Category", ["Engine Oil", "Brakes", "Tyres", "Electrical", "General", "Services"])
-        p_mrp = st.number_input("MRP (₹)", min_value=0.0)
-        p_price = st.number_input("Selling Price (₹)", min_value=0.0)
-        p_stock = st.number_input("Stock Quantity", min_value=0, value=10)
+    st.subheader("Manage Inventory")
+    with st.form("add_inventory_form", clear_on_submit=True):
+        inv_name = st.text_input("Item Name / Spare Part")
+        inv_mrp = st.number_input("MRP (₹)", min_value=0.0, step=10.0)
+        inv_price = st.number_input("Selling Price (₹)", min_value=0.0, step=10.0)
+        inv_stock = st.number_input("Stock Quantity", min_value=0, value=10)
         
-        if st.button("Save Part to Stock"):
-            c.execute("INSERT INTO inventory (name, category, mrp, selling_price, stock) VALUES (?, ?, ?, ?, ?)",
-                      (p_name, p_cat, p_mrp, p_price, p_stock))
+        submit_inv = st.form_submit_button("Add to Inventory")
+        if submit_inv and inv_name:
+            c.execute("INSERT INTO inventory (item_name, mrp, selling_price, stock) VALUES (?, ?, ?, ?)",
+                      (inv_name, inv_mrp, inv_price, inv_stock))
             conn.commit()
-            st.success(f"{p_name} added!")
+            st.success(f"Added {inv_name} to inventory!")
+            st.rerun()
+            
+    st.markdown("### Current Inventory Stock")
+    inv_df = pd.read_sql("SELECT * FROM inventory", conn)
+    if not inv_df.empty:
+        st.dataframe(inv_df, use_container_width=True)
+    else:
+        st.info("No items in inventory yet.")
 
-    st.divider()
-    st.subheader("📊 Current Stock")
-    df = pd.read_sql_query("SELECT id, name, category, mrp, selling_price, stock FROM inventory", conn)
-    st.dataframe(df, use_container_width=True)
-
-# ----------------- 3. UDHAR KHATA -----------------
 with tab3:
-    st.subheader("🔴 Udhar Khata")
-    df_udhar = pd.read_sql_query("SELECT id, customer, phone, vehicle, final_total, paid, udhar, date FROM bills WHERE udhar > 0", conn)
-    if not df_udhar.empty:
-        st.metric("Total Market Udhar", f"₹{df_udhar['udhar'].sum():.2f}")
-        st.dataframe(df_udhar, use_container_width=True)
+    st.subheader("Saved Bills & Records")
+    bills_df = pd.read_sql("SELECT * FROM bills ORDER BY date DESC", conn)
+    if not bills_df.empty:
+        st.dataframe(bills_df, use_container_width=True)
     else:
-        st.success("🎉 Zero Udhar!")
-
-# ----------------- 4. MECHANICS -----------------
-with tab4:
-    st.subheader("👨‍🔧 Manage Mechanics")
-    m_name = st.text_input("Mechanic Name")
-    m_phone = st.text_input("Phone Number")
-    if st.button("Add Mechanic"):
-        c.execute("INSERT INTO mechanics (name, phone) VALUES (?, ?)", (m_name, m_phone))
-        conn.commit()
-        st.success("Mechanic Added!")
-    df_m = pd.read_sql_query("SELECT * FROM mechanics", conn)
-    st.table(df_m)
-
-# ----------------- 5. REPORTS -----------------
-with tab5:
-    st.subheader("📊 Financial Reports")
-    df_bills = pd.read_sql("SELECT labor_charge, parts_total, final_total, payment_mode, date FROM bills", conn)
-    if not df_bills.empty:
-        df_bills['date'] = pd.to_datetime(df_bills['date'])
-        st.write("##### Monthly Turnover")
-        st.dataframe(df_bills.groupby(df_bills['date'].dt.to_period('M'))[['labor_charge', 'parts_total', 'final_total']].sum(), use_container_width=True)
-        st.write("##### Payment Mode Breakdown")
-        st.dataframe(df_bills.groupby('payment_mode')['final_total'].sum(), use_container_width=True)
-    else:
-        st.info("No data found.")
-
-# ----------------- 6. PROFILE -----------------
-with tab6:
-    st.subheader("⚙️ Garage Profile")
-    with st.form("garage_form"):
-        new_name = st.text_input("Service Center Name", value=g_name)
-        new_address = st.text_area("Address", value=g_address)
-        new_phone = st.text_input("Phone Number", value=g_phone)
-        new_tagline = st.text_input("Tagline", value=g_tagline)
-        
-        if st.form_submit_button("Save Details"):
-            c.execute("UPDATE garage_profile SET name=?, address=?, phone=?, tagline=? WHERE id=1", 
-                      (new_name, new_address, new_phone, new_tagline))
-            conn.commit()
-            st.success("✅ Profile Updated!")
+        st.info("No bill records found.")
