@@ -12,7 +12,7 @@ st.set_page_config(
     page_icon="🏎️"
 )
 
-# 🌟 Ultra-Modern Advanced CSS with Fixed High-Visibility Mobile Tabs
+# 🌟 Advanced CSS & Mobile UI Fixes
 st.markdown("""
     <style>
     .stApp {
@@ -72,7 +72,7 @@ st.markdown("""
     }
 
     /* Force Bright and Clear Button Text */
-    .stButton>button {
+    .stButton>button, .stFormSubmitButton>button {
         background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
         color: #ffffff !important;
         -webkit-text-fill-color: #ffffff !important;
@@ -84,50 +84,23 @@ st.markdown("""
         padding: 12px;
         font-size: 16px !important;
     }
-    
-    .stFormSubmitButton>button {
-        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
-        color: #ffffff !important;
-        -webkit-text-fill-color: #ffffff !important;
-        border-radius: 10px !important;
-        font-weight: 900 !important;
-        border: none !important;
-        width: 100%;
-        padding: 12px;
-        font-size: 16px !important;
-    }
 
-    /* 🌟 PERFECT MOBILE TABS FIX (Showing All Names Clearly) */
-    .stTabs [data-baseweb="tab-list"] {
-        display: flex;
-        gap: 6px;
+    /* 🌟 Stylish Horizontal Radio Menu for Mobile */
+    div.row-widget.stRadio > div {
+        flex-direction: row;
         background: #e2e8f0;
-        padding: 8px;
+        padding: 6px;
         border-radius: 14px;
-        overflow-x: auto;
+        justify-content: space-around;
     }
-    .stTabs [data-baseweb="tab"] {
-        flex: 1;
-        min-width: 80px;
-        height: 45px;
-        border-radius: 10px;
-        color: #1e293b !important;
-        -webkit-text-fill-color: #1e293b !important;
-        font-weight: 800 !important;
-        font-size: 13px !important;
+    div.row-widget.stRadio > div label {
         background: #ffffff;
+        padding: 8px 16px;
+        border-radius: 10px;
+        font-weight: 800 !important;
+        color: #1e293b !important;
         border: 1px solid #cbd5e1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    .stTabs [aria-selected="true"] {
-        background: #d97706 !important;
-        color: #ffffff !important;
-        -webkit-text-fill-color: #ffffff !important;
-        font-weight: 900 !important;
-        border: 1px solid #b45309 !important;
-        box-shadow: 0 4px 12px rgba(217, 119, 6, 0.4);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
     }
     </style>
 """, unsafe_allow_html=True)
@@ -135,7 +108,7 @@ st.markdown("""
 # --------------------------------------------------------
 # DATABASE SETUP
 # --------------------------------------------------------
-conn = sqlite3.connect("autoparts_shop_v6.db", check_same_thread=False)
+conn = sqlite3.connect("autoparts_shop_v7.db", check_same_thread=False)
 cursor = conn.cursor()
 
 cursor.execute('''
@@ -180,18 +153,26 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-tab1, tab2, tab3, tab4 = st.tabs(["🛒 Billing", "📦 Stock", "📖 Udhar", "📊 Records"])
+# 🌟 Advanced Navigation Menu (Replaced buggy standard tabs with crisp horizontal radio buttons)
+selected_tab = st.radio(
+    "Navigation Menu",
+    ["🛒 Billing", "📦 Stock", "📖 Udhar", "📊 Records"],
+    horizontal=True,
+    label_visibility="collapsed"
+)
+
+st.markdown("---")
 
 # --------------------------------------------------------
 # TAB 1: ESTIMATE & BILLING
 # --------------------------------------------------------
-with tab1:
+if selected_tab == "🛒 Billing":
     st.subheader("📝 New Customer Estimate & Billing")
     
     if "form_gen" not in st.session_state:
         st.session_state.form_gen = 0
 
-    # 🌟 Advanced Feature: Quick Sale / No Bill Option
+    # ⚡ Quick Sale / No Bill Option
     no_bill_mode = st.checkbox("⚡ Quick Direct Sale (जिसे बिल नहीं चाहिए / सीधा काउंटर बिक्री)", value=False, key=f"nobill_{st.session_state.form_gen}")
 
     if not no_bill_mode:
@@ -381,7 +362,7 @@ with tab1:
 # --------------------------------------------------------
 # TAB 2: INVENTORY STOCK MANAGEMENT
 # --------------------------------------------------------
-with tab2:
+elif selected_tab == "📦 Stock":
     st.subheader("📦 Inventory Stock Management")
     
     with st.form("add_stock_form", clear_on_submit=True):
@@ -411,7 +392,7 @@ with tab2:
 # --------------------------------------------------------
 # TAB 3: UDHAR KHATA MANAGEMENT
 # --------------------------------------------------------
-with tab3:
+elif selected_tab == "📖 Udhar":
     st.subheader("📖 Udhar Khata (Pending Dues)")
     
     udhar_df = pd.read_sql("SELECT id, customer_name, customer_mobile, vehicle_number, items_summary, total_bill, amount_paid, balance_due, date FROM sales WHERE balance_due > 0", conn)
@@ -447,11 +428,11 @@ with tab3:
 # --------------------------------------------------------
 # TAB 4: HISTORICAL RECORDS
 # --------------------------------------------------------
-with tab4:
+elif selected_tab == "📊 Records":
     st.subheader("📊 All Sales & Service Records")
     records_df = pd.read_sql("SELECT id, customer_name, vehicle_number, items_summary, total_bill, amount_paid, balance_due, total_savings, payment_mode, date FROM sales ORDER BY id DESC", conn)
     if not records_df.empty:
         st.dataframe(records_df, use_container_width=True)
     else:
         st.info("कोई पुराना रिकॉर्ड नहीं मिला।")
-                    
+        
