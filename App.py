@@ -12,72 +12,81 @@ st.set_page_config(
     page_icon="🏎️"
 )
 
-# 🌟 3D & Modern Glassmorphism Styling (CSS)
+# 🌟 Clean White Modern Styling (CSS)
 st.markdown("""
     <style>
+    /* Global App Theme - Pure White */
     .stApp {
-        background: radial-gradient(circle at top left, #1e293b, #0f172a, #020617);
-        color: #f8fafc;
+        background: #f8fafc;
+        color: #1e293b;
         font-family: 'Inter', sans-serif;
     }
+    
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
 
+    /* White Glassmorphism Header Card */
     .hero-card {
-        background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95));
-        border: 1px solid rgba(245, 158, 11, 0.4);
-        box-shadow: 0 10px 30px -10px rgba(245, 158, 11, 0.3);
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
         border-radius: 16px;
         padding: 20px;
         margin-bottom: 20px;
         text-align: center;
     }
     .hero-title {
-        color: #fbbf24;
+        color: #d97706;
         font-size: 24px;
         font-weight: 800;
         text-transform: uppercase;
         margin: 0;
     }
     .hero-sub {
-        color: #94a3b8;
+        color: #64748b;
         font-size: 13px;
         margin-top: 5px;
     }
+
+    /* Inputs Styling for White Theme */
     .stTextInput>div>div>input, .stSelectbox>div>div>div, .stNumberInput>div>div>input {
-        background-color: #0f172a !important;
-        color: #f8fafc !important;
-        border: 1px solid #334155 !important;
+        background-color: #ffffff !important;
+        color: #1e293b !important;
+        border: 1px solid #cbd5e1 !important;
         border-radius: 10px !important;
         padding: 10px !important;
     }
+
+    /* Buttons Styling */
     .stButton>button {
         background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
-        color: #0f172a !important;
+        color: #ffffff !important;
         border-radius: 10px !important;
         font-weight: 800 !important;
         border: none !important;
-        box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
+        box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
         width: 100%;
         padding: 10px;
     }
+
+    /* Tabs Styling */
     .stTabs [data-baseweb="tab-list"] {
         gap: 8px;
-        background: rgba(15, 23, 42, 0.8);
+        background: #e2e8f0;
         padding: 8px;
         border-radius: 12px;
-        border: 1px solid #334155;
     }
     .stTabs [data-baseweb="tab"] {
         border-radius: 8px;
-        color: #94a3b8 !important;
+        color: #475569 !important;
         font-weight: 600;
     }
     .stTabs [aria-selected="true"] {
-        background: linear-gradient(135deg, #f59e0b 0%, #d97706) !important;
-        color: #0f172a !important;
+        background: #ffffff !important;
+        color: #d97706 !important;
         font-weight: 800 !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     }
     </style>
 """, unsafe_allow_html=True)
@@ -85,7 +94,7 @@ st.markdown("""
 # --------------------------------------------------------
 # DATABASE SETUP
 # --------------------------------------------------------
-conn = sqlite3.connect("autoparts_shop_v4.db", check_same_thread=False)
+conn = sqlite3.connect("autoparts_shop_v5.db", check_same_thread=False)
 cursor = conn.cursor()
 
 cursor.execute('''
@@ -133,7 +142,7 @@ st.markdown("""
 tab1, tab2, tab3, tab4 = st.tabs(["🛒 Estimate & Billing", "📦 Inventory Stock", "📖 Udhar Khata", "📊 Records"])
 
 # --------------------------------------------------------
-# TAB 1: ESTIMATE & BILLING (AUTO MRP / SELLING PRICE)
+# TAB 1: ESTIMATE & BILLING
 # --------------------------------------------------------
 with tab1:
     st.subheader("📝 New Customer Estimate & Billing")
@@ -152,10 +161,8 @@ with tab1:
     st.markdown("---")
     st.markdown("### ➕ Add Items (Auto-fetch MRP & Selling Price)")
     
-    # Fetch inventory data
     inv_df = pd.read_sql("SELECT * FROM parts", conn)
     
-    # Dictionary creation for quick auto-fill lookup
     inventory_dict = {}
     item_choices = ["-- Custom Item (मैन्युअल लिखें) --"]
     if not inv_df.empty:
@@ -164,12 +171,12 @@ with tab1:
             item_choices.append(item_name)
             inventory_dict[item_name] = {
                 "mrp": row['mrp'],
-                "selling_price": row['selling_price']
+                "selling_price": row['selling_price'],
+                "stock": row['stock']
             }
 
     selected_inv_item = st.selectbox("Select Part from Inventory", item_choices)
 
-    # Automatic default values setup based on selection
     default_mrp = 0.0
     default_selling = 0.0
     if selected_inv_item != "-- Custom Item (मैन्युअल लिखें) --" and selected_inv_item in inventory_dict:
@@ -178,7 +185,6 @@ with tab1:
 
     col_a, col_b, col_c, col_d = st.columns(4)
     with col_a:
-        # If inventory item selected, use it as default name; else allow custom typing
         if selected_inv_item != "-- Custom Item (मैन्युअल लिखें) --":
             p_name_final = st.text_input("Part Name", value=selected_inv_item)
         else:
@@ -233,8 +239,8 @@ with tab1:
         total_savings = max(0.0, total_mrp_sum - parts_total_sum)
         
         st.markdown(f"""
-            <div style="background: rgba(34, 197, 94, 0.1); border: 1px solid #22c55e; padding: 10px; border-radius: 8px; margin: 10px 0;">
-                <span style="color: #22c55e; font-weight: bold;">🎉 Customer Total Savings (MRP Discount): ₹{total_savings:.2f}</span>
+            <div style="background: #dcfce7; border: 1px solid #22c55e; padding: 10px; border-radius: 8px; margin: 10px 0;">
+                <span style="color: #166534; font-weight: bold;">🎉 Customer Total Savings (MRP Discount): ₹{total_savings:.2f}</span>
             </div>
         """, unsafe_allow_html=True)
         
@@ -245,8 +251,8 @@ with tab1:
         total_bill = parts_total_sum + labour_cost
         
         st.markdown(f"""
-            <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid #fbbf24; padding: 15px; border-radius: 10px; margin: 10px 0;">
-                <h3 style="color: #fbbf24; margin: 0;">💥 Final Bill Amount: ₹{total_bill:.2f}</h3>
+            <div style="background: #fef3c7; border: 1px solid #f59e0b; padding: 15px; border-radius: 10px; margin: 10px 0;">
+                <h3 style="color: #b45309; margin: 0;">💥 Final Bill Amount: ₹{total_bill:.2f}</h3>
             </div>
         """, unsafe_allow_html=True)
         
@@ -260,7 +266,6 @@ with tab1:
             else:
                 current_date = datetime.now().strftime("%d-%m-%Y %I:%M %p")
                 
-                # Readable summary string for database records & udhar tracking
                 items_desc_list = [f"{item['name']} (x{item['qty']})" for item in st.session_state.cart]
                 if labour_desc:
                     items_desc_list.append(f"Labour: {labour_desc}")
@@ -272,9 +277,13 @@ with tab1:
                 ''', (c_name, c_mobile, v_number, v_model, items_summary_str, parts_total_sum, total_mrp_sum, total_savings, labour_desc, labour_cost, total_bill, amount_paid, balance_due, pay_mode, current_date))
                 
                 sale_id = cursor.lastrowid
+
+                for item in st.session_state.cart:
+                    cursor.execute("UPDATE parts SET stock = stock - ? WHERE name = ?", (item['qty'], item['name']))
+
                 conn.commit()
                 
-                st.success(f"✅ बिल सफलतापूर्व सेव हो गया! ID: #{sale_id}")
+                st.success(f"✅ बिल सेव हो गया और स्टॉक से सामान माइनस कर दिया गया! ID: #{sale_id}")
                 
                 formatted_items = "\n".join([f"{idx+1}. {item['name']} (x{item['qty']}) = ₹{item['total']:.2f}" for idx, item in enumerate(st.session_state.cart)])
                 
@@ -346,12 +355,11 @@ with tab2:
         st.info("स्टॉक में कोई सामान उपलब्ध नहीं है।")
 
 # --------------------------------------------------------
-# TAB 3: UDHAR KHATA MANAGEMENT (WITH WORK DETAILS)
+# TAB 3: UDHAR KHATA MANAGEMENT
 # --------------------------------------------------------
 with tab3:
     st.subheader("📖 Udhar Khata (Pending Dues & Work History)")
     
-    # Now selecting items_summary so you can see what work was done
     udhar_df = pd.read_sql("SELECT id, customer_name, customer_mobile, vehicle_number, items_summary, total_bill, amount_paid, balance_due, date FROM sales WHERE balance_due > 0", conn)
     
     if not udhar_df.empty:
@@ -383,14 +391,12 @@ with tab3:
         st.info("🎉 शानदार! कोई भी उधार बकाया नहीं है।")
 
 # --------------------------------------------------------
-# TAB 4: HISTORICAL RECORDS (WITH WORK DETAILS)
+# TAB 4: HISTORICAL RECORDS
 # --------------------------------------------------------
 with tab4:
     st.subheader("📊 All Sales & Service Records")
-    # Now selecting items_summary here too so complete history of work done is visible
     records_df = pd.read_sql("SELECT id, customer_name, vehicle_number, items_summary, total_bill, amount_paid, balance_due, total_savings, payment_mode, date FROM sales ORDER BY id DESC", conn)
     if not records_df.empty:
         st.dataframe(records_df, use_container_width=True)
     else:
         st.info("कोई पुराना रिकॉर्ड नहीं मिला।")
-            
