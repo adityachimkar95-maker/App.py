@@ -11,106 +11,157 @@ c.execute('''CREATE TABLE IF NOT EXISTS inventory
              (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, category TEXT, price REAL, stock INTEGER, alert_level INTEGER)''')
 
 c.execute('''CREATE TABLE IF NOT EXISTS bills 
-             (id INTEGER PRIMARY KEY AUTOINCREMENT, customer TEXT, phone TEXT, vehicle TEXT, total REAL, paid REAL, udhar REAL, date TEXT)''')
+             (id INTEGER PRIMARY KEY AUTOINCREMENT, customer TEXT, phone TEXT, vehicle TEXT, labor_charge REAL, parts_total REAL, gst_percent REAL, final_total REAL, paid REAL, udhar REAL, date TEXT, mechanic TEXT)''')
+
+c.execute('''CREATE TABLE IF NOT EXISTS mechanics 
+             (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, phone TEXT)''')
 
 conn.commit()
 
-# App Interface
-st.set_page_config(page_title="Automobile Garage Billing", layout="wide")
-st.title("🚗 Automobile Garage Billing & Stock Manager")
+st.set_page_config(page_title="Pro Garage Billing & ERP", layout="wide")
+st.title("🛠️ Pro Garage Billing & Management System")
 
-menu = ["Billing System", "Stock Management", "Udhar Khata", "Sales Summary"]
+menu = ["⚡ Quick Billing", "📦 Stock Management", "🔴 Udhar Khata", "👨‍🔧 Mechanics", "📜 History & Reports"]
 choice = st.sidebar.selectbox("Navigation", menu)
 
-# 1. Billing System
-if choice == "Billing System":
-    st.header("📝 Create New Bill")
+# 1. Quick Billing
+if choice == "⚡ Quick Billing":
+    st.header("📝 Create New Job Sheet / Bill")
+    
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        cust_name = st.text_input("Customer Name")
+        cust_phone = st.text_input("WhatsApp Number (10 digits)")
+    with col2:
+        vehicle_no = st.text_input("Vehicle Number (e.g. MH04AB1234)").upper()
+        km_reading = st.number_input("Odometer (KM)", min_value=0, value=0)
+    with col3:
+        c.execute("SELECT name FROM mechanics")
+        mech_list = [m[0] for m in c.fetchall()]
+        selected_mech = st.selectbox("Assigned Mechanic", mech_list if mech_list else ["Default"])
+
+    st.divider()
+    
+    # Items selection
     c.execute("SELECT name, price, stock FROM inventory WHERE stock > 0")
     parts = c.fetchall()
     
-    col1, col2 = st.columns(2)
-    with col1:
-        cust_name = st.text_input("Customer Name")
-        cust_phone = st.text_input("WhatsApp Number")
-    with col2:
-        vehicle_no = st.text_input("Vehicle Number")
+    parts_cost = 0.0
+    selected_items = []
+    
+    st.subheader("🛠️ Spare Parts & Items")
+    if parts:
+        part_dict = {p[0]: (p[1], p[2]) for p in parts}
+        items = st.multiselect("Select Spare Parts", list(part_dict.keys()))
+        
+        for item in items:
+            price, max_stk = part_dict[item]
+            qty = st.number_input(f"Quantity for {item} (Max: {max_stk})", min_value=1, max_value=max_stk, value=1, key=item)
+            parts_cost += price * qty
+            selected_items.append(f"{item} x{qty} (₹{price*qty})")
+    else:
+        st.info("No items in inventory yet. You can still add Labor charges below.")
         
     st.divider()
     
-    if parts:
-        part_dict = {p[0]: (p[1], p[2]) for p in parts}
-        selected_part = st.selectbox("Select Spare Part", list(part_dict.keys()))
-        price, available_stock = part_dict[selected_part]
+    # Financial Calculation
+    col_a, col_b = st.columns(2)
+    with col_a:
+        st.subheader("💰 Charges Breakdown")
+        st.write(f"**Parts Cost:** ₹{parts_cost}")
+        labor_charge = st.number_input("Labor / Service Charges (₹)", min_value=0.0, value=0.0)
+        subtotal = parts_cost + labor_charge
         
-        st.info(f"Price: ₹{price} | Available Stock: {available_stock}")
-        qty = st.number_input("Quantity", min_value=1, max_value=available_stock, value=1)
-        
-        total_amount = price * qty
-        discount = st.number_input("Discount (₹)", min_value=0.0, value=0.0)
-        final_amount = total_amount - discount
-        
-        st.subheader(f"Final Amount: ₹{final_amount}")
-        paid = st.number_input("Paid Amount (₹)", min_value=0.0, max_value=final_amount, value=final_amount)
-        udhar = final_amount - paid
-        
-        if st.button("Generate Bill & Save"):
-            c.execute("UPDATE inventory SET stock = stock - ? WHERE name = ?", (qty, selected_part))
-            date_str = datetime.now().strftime("%Y-%m-%d %H:%M")
-            c.execute("INSERT INTO bills (customer, phone, vehicle, total, paid, udhar, date) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                      (cust_name, cust_phone, vehicle_no, final_amount, paid, udhar, date_str))
-            conn.commit()
-            st.success("Bill Saved Successfully!")
+        gst_opt = st.checkbox("Apply GST?")
+        gst_percent = 0.0
+        if gst_opt:
+            gst_percent = st.selectbox("GST Rate (%)", [5, 12, 18, 28], index=2)
             
-            msg = f"Hello {cust_name}, your bill total is Rs.{final_amount}. Paid: Rs.{paid}, Pending Dues: Rs.{udhar}. Thank you!"
-            wa_url = f"https://wa.me/{cust_phone}?text={msg.replace(' ', '%20')}"
-            st.markdown(f"[📲 Send Bill via WhatsApp]({wa_url})", unsafe_allow_html=True)
-    else:
-        st.warning("No items in stock! Please add spare parts in Stock Management first.")
+        gst_amount = (subtotal * gst_percent) / 100
+        discount = st.number_input("Discount (₹)", min_value=0.0, value=0.0)
+        final_total = subtotal + gst_amount - discount
+        
+        st.markdown(f"### **Final Total Amount: ₹{final_total:.2f}**")
+        
+    with col_b:
+        st.subheader("💳 Payment Details")
+        paid = st.number_input("Paid Amount (₹)", min_value=0.0, max_value=final_total, value=final_total)
+        udhar = final_total - paid
+        st.write(f"**Pending Udhar:** ₹{udhar:.2f}")
+        
+        if st.button("💾 Generate & Save Bill", type="primary", use_container_width=True):
+            if not cust_name or not vehicle_no:
+                st.error("Please enter Customer Name and Vehicle Number!")
+            else:
+                # Save to database
+                date_str = datetime.now().strftime("%Y-%m-%d %H:%M")
+                c.execute('''INSERT INTO bills (customer, phone, vehicle, labor_charge, parts_total, gst_percent, final_total, paid, udhar, date, mechanic) 
+                             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                          (cust_name, cust_phone, vehicle_no, labor_charge, parts_cost, gst_percent, final_total, paid, udhar, date_str, selected_mech))
+                
+                # Deduct stock
+                for item in items:
+                    c.execute("UPDATE inventory SET stock = stock - 1 WHERE name = ?", (item,))
+                conn.commit()
+                
+                st.success("✅ Bill Saved Successfully!")
+                
+                # WhatsApp Link
+                msg = f"Hello {cust_name}, your bill for Vehicle {vehicle_no} is Total: Rs.{final_total:.2f}. Paid: Rs.{paid:.2f}, Due: Rs.{udhar:.2f}. Thank you for visiting!"
+                wa_url = f"https://wa.me/{cust_phone}?text={msg.replace(' ', '%20')}"
+                st.markdown(f"[📲 **Click Here to Send WhatsApp Invoice**]({wa_url})", unsafe_allow_html=True)
 
 # 2. Stock Management
-elif choice == "Stock Management":
-    st.header("📦 Inventory & Stock")
-    with st.expander("➕ Add New Spare Part"):
+elif choice == "📦 Stock Management":
+    st.header("📦 Inventory & Spare Parts Manager")
+    with st.expander("➕ Add New Spare Part / Oil"):
         p_name = st.text_input("Part Name")
-        p_cat = st.text_input("Category (e.g. Engine, Brakes)")
-        p_price = st.number_input("Unit Price (₹)", min_value=0.0)
-        p_stock = st.number_input("Initial Stock Quantity", min_value=0)
-        p_alert = st.number_input("Low Stock Alert Level", min_value=1, value=5)
+        p_cat = st.selectbox("Category", ["Engine Oil", "Brakes", "Tyres", "Electrical", "General Spare", "Accessories"])
+        p_price = st.number_input("Selling Price (₹)", min_value=0.0)
+        p_stock = st.number_input("Stock Quantity", min_value=0, value=10)
+        p_alert = st.number_input("Low Stock Alert Level", min_value=1, value=3)
         
-        if st.button("Add Item"):
+        if st.button("Save Part"):
             c.execute("INSERT INTO inventory (name, category, price, stock, alert_level) VALUES (?, ?, ?, ?, ?)",
                       (p_name, p_cat, p_price, p_stock, p_alert))
             conn.commit()
-            st.success(f"{p_name} added to inventory!")
+            st.success(f"{p_name} added to stock!")
 
     df = pd.read_sql_query("SELECT id, name, category, price, stock, alert_level FROM inventory", conn)
     st.dataframe(df, use_container_width=True)
-    
-    low_stock = df[df['stock'] <= df['alert_level']]
-    if not low_stock.empty:
-        st.error("⚠️ LOW STOCK WARNING:")
-        st.table(low_stock[['name', 'stock', 'alert_level']])
 
 # 3. Udhar Khata
-elif choice == "Udhar Khata":
-    st.header("🔴 Udhar Khata (Pending Payments)")
-    df_udhar = pd.read_sql_query("SELECT * FROM bills WHERE udhar > 0", conn)
+elif choice == "🔴 Udhar Khata":
+    st.header("🔴 Udhar Khata (Customer Dues)")
+    df_udhar = pd.read_sql_query("SELECT id, customer, phone, vehicle, final_total, paid, udhar, date FROM bills WHERE udhar > 0", conn)
     if not df_udhar.empty:
+        st.metric("Total Outstanding Market Udhar", f"₹{df_udhar['udhar'].sum():.2f}")
         st.dataframe(df_udhar, use_container_width=True)
-        st.metric("Total Outstanding Udhar", f"₹{df_udhar['udhar'].sum()}")
     else:
-        st.success("Great news! No pending dues.")
+        st.success("🎉 All dues cleared! Zero Udhar.")
 
-# 4. Sales Summary
-elif choice == "Sales Summary":
-    st.header("📊 Sales Dashboard")
-    df_sales = pd.read_sql_query("SELECT * FROM bills", conn)
-    if not df_sales.empty:
-        col1, col2, col3 = st.columns(3)
-        col1.metric("Total Revenue", f"₹{df_sales['total'].sum()}")
-        col2.metric("Cash Collected", f"₹{df_sales['paid'].sum()}")
-        col3.metric("Total Udhar", f"₹{df_sales['udhar'].sum()}")
-        st.bar_chart(df_sales, x='date', y='total')
+# 4. Mechanics
+elif choice == "👨‍🔧 Mechanics":
+    st.header("👨‍🔧 Manage Mechanics & Staff")
+    m_name = st.text_input("Mechanic Name")
+    m_phone = st.text_input("Phone Number")
+    if st.button("Add Mechanic"):
+        c.execute("INSERT INTO mechanics (name, phone) VALUES (?, ?)", (m_name, m_phone))
+        conn.commit()
+        st.success("Mechanic Added!")
+        
+    df_m = pd.read_sql_query("SELECT * FROM mechanics", conn)
+    st.table(df_m)
+
+# 5. History & Reports
+elif choice == "📜 History & Reports":
+    st.header("📜 Vehicle Service History & Analytics")
+    search_v = st.text_input("🔍 Search by Vehicle Number").upper()
+    
+    if search_v:
+        df_v = pd.read_sql_query("SELECT * FROM bills WHERE vehicle LIKE ?", conn, params=(f"%{search_v}%",))
+        st.subheader(f"History for {search_v}")
+        st.dataframe(df_v, use_container_width=True)
     else:
-        st.info("No sales data available yet.")
-      
+        df_all = pd.read_sql_query("SELECT * FROM bills", conn)
+        st.dataframe(df_all, use_container_width=True)
