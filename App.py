@@ -3,7 +3,6 @@ import sqlite3
 import pandas as pd
 from datetime import datetime
 import urllib.parse
-from fpdf import FPDF
 
 # 🎨 Page Configuration (Mobile & Desktop Optimized)
 st.set_page_config(
@@ -315,7 +314,7 @@ if st.session_state.menu_tab == "🛒 Billing":
                 conn.commit()
                 st.success(f"✅ बिल सफलतापूर्वक सेव हो गया! ID: #{sale_id}")
                 
-        # 📲 WhatsApp & PDF Sharing Section
+        # 📲 WhatsApp & Print/PDF Sharing Section
         formatted_items = "\n".join([f"{idx+1}. {item['name']} (x{item['qty']}) = ₹{item['total']:.2f}" for idx, item in enumerate(st.session_state.cart)])
         
         slip_text = f"""🏎️ *MY SHIVSHAKTI AUTO PARTS & SERVICE*
@@ -339,7 +338,7 @@ if st.session_state.menu_tab == "🛒 Billing":
 -----------------------------------
 🙏 *धन्यवाद! फिर पधारें।*"""
 
-        st.markdown("### 📤 Share Estimate & PDF")
+        st.markdown("### 📤 Share Estimate & Print PDF")
         clean_mobile = c_mobile.replace("+", "").replace(" ", "")
         if len(clean_mobile) == 10:
             clean_mobile = "91" + clean_mobile
@@ -350,40 +349,28 @@ if st.session_state.menu_tab == "🛒 Billing":
             st.link_button("📲 Share via WhatsApp", wa_link)
             
         with col_s2:
-            def create_pdf(cart_items, total):
-                pdf = FPDF()
-                pdf.add_page()
-                pdf.set_font("Arial", 'B', 14)
-                pdf.cell(200, 10, txt="MY SHIVSHAKTI AUTO PARTS & SERVICE", ln=True, align='C')
-                pdf.set_font("Arial", size=10)
-                pdf.cell(200, 8, txt="Main Road, Rantham, Chikhli, Malkapur (MH) | Ph: 9158551896", ln=True, align='C')
-                pdf.ln(5)
-                pdf.cell(200, 8, txt=f"Customer: {c_name} | Vehicle: {v_number}", ln=True)
-                pdf.cell(200, 8, txt=f"Date: {datetime.now().strftime('%d-%m-%Y %I:%M %p')}", ln=True)
-                pdf.ln(5)
-                pdf.set_font("Arial", 'B', 10)
-                pdf.cell(100, 8, "Item Name", 1)
-                pdf.cell(30, 8, "Qty", 1, align='C')
-                pdf.cell(60, 8, "Total (Rs)", 1, align='R')
-                pdf.ln()
-                pdf.set_font("Arial", size=10)
-                for itm in cart_items:
-                    pdf.cell(100, 8, itm['name'], 1)
-                    pdf.cell(30, 8, str(itm['qty']), 1, align='C')
-                    pdf.cell(60, 8, f"{itm['total']:.2f}", 1, align='R')
-                    pdf.ln()
-                pdf.set_font("Arial", 'B', 11)
-                pdf.cell(130, 10, "Final Bill Amount:", 1)
-                pdf.cell(60, 10, f"Rs. {total:.2f}", 1, align='R')
-                return pdf.output(dest='S').encode('latin-1')
-
-            pdf_bytes = create_pdf(st.session_state.cart, total_bill)
-            st.download_button(
-                label="📄 Download Estimate PDF",
-                data=pdf_bytes,
-                file_name=f"Estimate_{c_name}.pdf",
-                mime="application/pdf"
-            )
+            items_html = "".join([f"<tr><td>{itm['name']}</td><td style='text-align:center;'>{itm['qty']}</td><td style='text-align:right;'>₹{itm['total']:.2f}</td></tr>" for itm in st.session_state.cart])
+            print_html = f"""
+                <html>
+                <body style="font-family: Arial; padding: 20px;">
+                    <h2 style="text-align:center; color:#d97706; margin-bottom:0;">MY SHIVSHAKTI AUTO PARTS & SERVICE</h2>
+                    <p style="text-align:center; margin-top:5px;">Main Road, Rantham, Chikhli, Malkapur (MH) | Ph: 9158551896</p>
+                    <hr>
+                    <p><b>Customer:</b> {c_name} &nbsp;&nbsp;|&nbsp;&nbsp; <b>Vehicle:</b> {v_number}</p>
+                    <p><b>Date:</b> {datetime.now().strftime('%d-%m-%Y %I:%M %p')}</p>
+                    <table border="1" style="width:100%; border-collapse:collapse; margin-top:10px;" cellpadding="8">
+                        <tr style="background:#f1f5f9;"><th>Item Name</th><th>Qty</th><th>Total (₹)</th></tr>
+                        {items_html}
+                    </table>
+                    <h3>Labour Charges: ₹{labour_cost:.2f}</h3>
+                    <h2 style="color:#b45309;">Final Bill Amount: ₹{total_bill:.2f}</h2>
+                    <p style="text-align:center; margin-top:30px;"><b>धन्यवाद! फिर पधारें।</b></p>
+                    <script>window.print();</script>
+                </body>
+                </html>
+            """
+            encoded_html = urllib.parse.quote(print_html)
+            st.markdown(f'<a href="data:text/html;charset=utf-8,{encoded_html}" target="_blank"><button style="background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color:white; border:none; border-radius:10px; padding:10px; width:100%; font-weight:900; cursor:pointer;">🖨️ Print / Save PDF Estimate</button></a>', unsafe_allow_html=True)
         
         if st.button("🔄 Create New Bill (Reset Cart)"):
             st.session_state.cart = []
@@ -466,6 +453,4 @@ elif st.session_state.menu_tab == "📊 Records":
         st.dataframe(records_df, use_container_width=True)
     else:
         st.info("कोई पुराना रिकॉर्ड नहीं मिला।")
-  streamlit
-fpdf
-
+        
