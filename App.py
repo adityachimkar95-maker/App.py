@@ -9,7 +9,7 @@ import json
 st.set_page_config(
     page_title="My Shivshakti Auto Parts & Service",
     layout="wide",
-    page_icon="🏎️"
+    page_icon="🏎️" 
 )
 
 # 🌟 3D & Modern Glassmorphism Styling (CSS)
