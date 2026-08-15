@@ -12,7 +12,7 @@ st.set_page_config(
     page_icon="🏎️"
 )
 
-# 🌟 Perfect Clean Styling with Bright Header & Horizontal Buttons
+# 🌟 Ultra-Clean Mobile Dashboard Menu CSS
 st.markdown("""
     <style>
     .stApp {
@@ -25,30 +25,26 @@ st.markdown("""
     footer {visibility: hidden;}
     header {visibility: hidden;}
 
-    /* 🌟 Bright and Clear Top Header for Shop Name */
-    .top-header {
+    .hero-card {
         background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
-        border: 2px solid #cbd5e1;
-        border-bottom: 4px solid #f59e0b;
-        padding: 18px 10px;
+        border: 1px solid #cbd5e1;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+        border-radius: 16px;
+        padding: 15px;
         margin-bottom: 15px;
         text-align: center;
-        border-radius: 12px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     }
-    .top-title {
+    .hero-title {
         color: #d97706;
-        font-size: 21px;
-        font-weight: 900;
+        font-size: 20px;
+        font-weight: 800;
         text-transform: uppercase;
         margin: 0;
-        letter-spacing: 0.5px;
     }
-    .top-sub {
-        color: #334155;
-        font-size: 13px;
-        margin-top: 6px;
-        font-weight: 700;
+    .hero-sub {
+        color: #475569;
+        font-size: 12px;
+        margin-top: 5px;
     }
 
     /* Force clear dark text inside all input fields */
@@ -85,8 +81,32 @@ st.markdown("""
         border: none !important;
         box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
         width: 100%;
-        padding: 10px 2px;
+        padding: 12px;
+        font-size: 16px !important;
+    }
+
+    /* 🌟 Perfect Big Radio Buttons with Clear Names in Front */
+    .stRadio div[role="radiogroup"] {
+        display: flex;
+        flex-direction: row;
+        gap: 8px;
+        justify-content: space-between;
+        width: 100%;
+    }
+    .stRadio div[role="radiogroup"] label {
+        background: #ffffff !important;
+        border: 2px solid #cbd5e1 !important;
+        border-radius: 12px !important;
+        padding: 10px 8px !important;
+        flex: 1;
+        text-align: center;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        cursor: pointer;
+    }
+    .stRadio div[role="radiogroup"] label div p {
         font-size: 13px !important;
+        font-weight: 900 !important;
+        color: #0f172a !important;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -94,7 +114,7 @@ st.markdown("""
 # --------------------------------------------------------
 # DATABASE SETUP
 # --------------------------------------------------------
-conn = sqlite3.connect("autoparts_shop_v11.db", check_same_thread=False)
+conn = sqlite3.connect("autoparts_shop_v8.db", check_same_thread=False)
 cursor = conn.cursor()
 
 cursor.execute('''
@@ -130,44 +150,29 @@ cursor.execute('''
 conn.commit()
 
 # --------------------------------------------------------
-# UI TOP HEADER (BIG, CLEAR & ON TOP)
+# UI HEADER
 # --------------------------------------------------------
 st.markdown("""
-    <div class="top-header">
-        <p class="top-title">🏎️ MY SHIVSHAKTI AUTO PARTS & SERVICE</p>
-        <p class="top-sub">📍 Main Road, Rantham, Chikhli, Malkapur (MH) &nbsp;|&nbsp; 📞 9158551896</p>
+    <div class="hero-card">
+        <p class="hero-title">🏎️ MY SHIVSHAKTI AUTO PARTS & SERVICE</p>
+        <p class="hero-sub">📍 Main Road, Rantham, Chikhli, Malkapur (MH) | 📞 9158551896</p>
     </div>
 """, unsafe_allow_html=True)
 
-# 🌟 Session State for Menu Selection
-if "menu_tab" not in st.session_state:
-    st.session_state.menu_tab = "🛒 Billing"
-
-# 🌟 Horizontal Navigation Buttons in a Single Row (Side by Side)
-m1, m2, m3, m4 = st.columns(4)
-with m1:
-    if st.button("🛒 Billing", key="btn_bill"):
-        st.session_state.menu_tab = "🛒 Billing"
-        st.rerun()
-with m2:
-    if st.button("📦 Stock", key="btn_stock"):
-        st.session_state.menu_tab = "📦 Stock"
-        st.rerun()
-with m3:
-    if st.button("📖 Udhar", key="btn_udhar"):
-        st.session_state.menu_tab = "📖 Udhar"
-        st.rerun()
-with m4:
-    if st.button("📊 Records", key="btn_records"):
-        st.session_state.menu_tab = "📊 Records"
-        st.rerun()
+# 🌟 Crystal Clear Menu Selection with Names in Front
+selected_tab = st.radio(
+    "Navigation Menu",
+    ["🛒 Billing", "📦 Stock", "📖 Udhar", "📊 Records"],
+    horizontal=True,
+    label_visibility="collapsed"
+)
 
 st.markdown("---")
 
 # --------------------------------------------------------
 # TAB 1: ESTIMATE & BILLING
 # --------------------------------------------------------
-if st.session_state.menu_tab == "🛒 Billing":
+if selected_tab == "🛒 Billing":
     st.subheader("📝 New Customer Estimate & Billing")
     
     if "form_gen" not in st.session_state:
@@ -363,7 +368,7 @@ if st.session_state.menu_tab == "🛒 Billing":
 # --------------------------------------------------------
 # TAB 2: INVENTORY STOCK MANAGEMENT
 # --------------------------------------------------------
-elif st.session_state.menu_tab == "📦 Stock":
+elif selected_tab == "📦 Stock":
     st.subheader("📦 Inventory Stock Management")
     
     with st.form("add_stock_form", clear_on_submit=True):
@@ -393,7 +398,7 @@ elif st.session_state.menu_tab == "📦 Stock":
 # --------------------------------------------------------
 # TAB 3: UDHAR KHATA MANAGEMENT
 # --------------------------------------------------------
-elif st.session_state.menu_tab == "📖 Udhar":
+elif selected_tab == "📖 Udhar":
     st.subheader("📖 Udhar Khata (Pending Dues)")
     
     udhar_df = pd.read_sql("SELECT id, customer_name, customer_mobile, vehicle_number, items_summary, total_bill, amount_paid, balance_due, date FROM sales WHERE balance_due > 0", conn)
@@ -429,7 +434,7 @@ elif st.session_state.menu_tab == "📖 Udhar":
 # --------------------------------------------------------
 # TAB 4: HISTORICAL RECORDS
 # --------------------------------------------------------
-elif st.session_state.menu_tab == "📊 Records":
+elif selected_tab == "📊 Records":
     st.subheader("📊 All Sales & Service Records")
     records_df = pd.read_sql("SELECT id, customer_name, vehicle_number, items_summary, total_bill, amount_paid, balance_due, total_savings, payment_mode, date FROM sales ORDER BY id DESC", conn)
     if not records_df.empty:
