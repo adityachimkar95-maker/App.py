@@ -12,7 +12,7 @@ st.set_page_config(
     page_icon="🏎️"
 )
 
-# 🌟 High Visibility White Theme & Mobile Optimized Tabs (CSS)
+# 🌟 High Visibility White Theme & Clear Menu CSS
 st.markdown("""
     <style>
     .stApp {
@@ -83,31 +83,34 @@ st.markdown("""
         font-size: 16px !important;
     }
 
-    /* Mobile Friendly Tabs Fix (No overflow/hiding) */
+    /* Extremely Clear Menu / Tabs Styling for Mobile */
     .stTabs [data-baseweb="tab-list"] {
         display: flex;
-        flex-wrap: wrap;
-        gap: 4px;
-        background: #e2e8f0;
+        flex-wrap: nowrap;
+        gap: 6px;
+        background: #cbd5e1;
         padding: 6px;
-        border-radius: 10px;
+        border-radius: 12px;
+        overflow-x: auto;
     }
     .stTabs [data-baseweb="tab"] {
         flex: 1;
-        min-width: 110px;
-        height: 40px;
-        border-radius: 6px;
-        color: #334155 !important;
-        font-weight: 700;
-        font-size: 13px;
-        background: #f1f5f9;
+        min-width: 90px;
+        height: 45px;
+        border-radius: 8px;
+        color: #0f172a !important;
+        font-weight: 800 !important;
+        font-size: 14px !important;
+        background: #ffffff;
         justify-content: center;
+        border: 1px solid #94a3b8;
     }
     .stTabs [aria-selected="true"] {
-        background: #ffffff !important;
-        color: #b45309 !important;
+        background: #d97706 !important;
+        color: #ffffff !important;
         font-weight: 900 !important;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        border: 1px solid #b45309 !important;
+        box-shadow: 0 4px 10px rgba(217, 119, 6, 0.4);
     }
     </style>
 """, unsafe_allow_html=True)
@@ -168,23 +171,17 @@ tab1, tab2, tab3, tab4 = st.tabs(["🛒 Billing", "📦 Stock", "📖 Udhar", "�
 with tab1:
     st.subheader("📝 New Customer Estimate & Billing")
     
-    # Initialize session state for customer inputs so they can be cleared automatically
-    if "c_name_input" not in st.session_state:
-        st.session_state.c_name_input = ""
-    if "c_mobile_input" not in st.session_state:
-        st.session_state.c_mobile_input = ""
-    if "v_number_input" not in st.session_state:
-        st.session_state.v_number_input = ""
-    if "v_model_input" not in st.session_state:
-        st.session_state.v_model_input = ""
+    # Session state key manager to force blank fields after saving bill
+    if "form_gen" not in st.session_state:
+        st.session_state.form_gen = 0
 
     col_c1, col_c2 = st.columns(2)
     with col_c1:
-        c_name = st.text_input("Customer Name", value=st.session_state.c_name_input, placeholder="e.g. Aditya Chimkar")
-        c_mobile = st.text_input("Customer Mobile Number", value=st.session_state.c_mobile_input, placeholder="9158551896")
+        c_name = st.text_input("Customer Name", value="", placeholder="कस्टमर का नाम लिखें...", key=f"c_name_{st.session_state.form_gen}")
+        c_mobile = st.text_input("Customer Mobile Number", value="", placeholder="मोबाइल नंबर लिखें...", key=f"c_mobile_{st.session_state.form_gen}")
     with col_c2:
-        v_number = st.text_input("Vehicle Number", value=st.session_state.v_number_input, placeholder="MH19CH9695").upper()
-        v_model = st.text_input("Vehicle Model", value=st.session_state.v_model_input, placeholder="Swift / Splendor")
+        v_number = st.text_input("Vehicle Number", value="", placeholder="गाड़ी नंबर (उदा. MH19...)", key=f"v_num_{st.session_state.form_gen}").upper()
+        v_model = st.text_input("Vehicle Model", value="", placeholder="गाड़ी का मॉडल (उदा. Splendor)", key=f"v_model_{st.session_state.form_gen}")
 
     if "cart" not in st.session_state:
         st.session_state.cart = []
@@ -206,7 +203,7 @@ with tab1:
                 "stock": row['stock']
             }
 
-    selected_inv_item = st.selectbox("Select Part from Inventory", item_choices)
+    selected_inv_item = st.selectbox("Select Part from Inventory", item_choices, key=f"sel_item_{st.session_state.form_gen}")
 
     default_mrp = 0.0
     default_selling = 0.0
@@ -217,15 +214,15 @@ with tab1:
     col_a, col_b, col_c, col_d = st.columns(4)
     with col_a:
         if selected_inv_item != "-- Custom Item (मैन्युअल लिखें) --":
-            p_name_final = st.text_input("Part Name", value=selected_inv_item)
+            p_name_final = st.text_input("Part Name", value=selected_inv_item, key=f"p_name_{st.session_state.form_gen}")
         else:
-            p_name_final = st.text_input("Custom Part Name", placeholder="उदा. Chain Cleaning")
+            p_name_final = st.text_input("Custom Part Name", value="", placeholder="पार्ट का नाम", key=f"p_custom_{st.session_state.form_gen}")
     with col_b:
-        item_mrp_input = st.number_input("MRP (₹)", min_value=0.0, value=default_mrp, step=10.0)
+        item_mrp_input = st.number_input("MRP (₹)", min_value=0.0, value=default_mrp, step=10.0, key=f"p_mrp_{st.session_state.form_gen}")
     with col_c:
-        item_selling_input = st.number_input("Selling Price (₹)", min_value=0.0, value=default_selling, step=10.0)
+        item_selling_input = st.number_input("Selling Price (₹)", min_value=0.0, value=default_selling, step=10.0, key=f"p_sell_{st.session_state.form_gen}")
     with col_d:
-        qty_input = st.number_input("Quantity", min_value=1, value=1)
+        qty_input = st.number_input("Quantity", min_value=1, value=1, key=f"p_qty_{st.session_state.form_gen}")
 
     if st.button("➕ Add to Bill Cart"):
         if p_name_final and item_selling_input > 0:
@@ -275,8 +272,8 @@ with tab1:
         """, unsafe_allow_html=True)
         
         st.markdown("---")
-        labour_desc = st.text_input("Labour / Fitting Work Description", placeholder="उदा. सर्विसिंग और फिटिंग चार्ज")
-        labour_cost = st.number_input("Labour Charges (₹)", min_value=0.0, step=10.0)
+        labour_desc = st.text_input("Labour / Fitting Work Description", value="", placeholder="उदा. सर्विसिंग और फिटिंग चार्ज", key=f"lab_desc_{st.session_state.form_gen}")
+        labour_cost = st.number_input("Labour Charges (₹)", min_value=0.0, value=0.0, step=10.0, key=f"lab_cost_{st.session_state.form_gen}")
         
         total_bill = parts_total_sum + labour_cost
         
@@ -286,8 +283,8 @@ with tab1:
             </div>
         """, unsafe_allow_html=True)
         
-        pay_mode = st.selectbox("Payment Mode", ["Cash", "Online/UPI", "Udhar (Credit)"])
-        amount_paid = st.number_input("Amount Paid / Advance (₹)", min_value=0.0, max_value=float(total_bill), value=float(total_bill))
+        pay_mode = st.selectbox("Payment Mode", ["Cash", "Online/UPI", "Udhar (Credit)"], key=f"pay_mode_{st.session_state.form_gen}")
+        amount_paid = st.number_input("Amount Paid / Advance (₹)", min_value=0.0, max_value=float(total_bill), value=float(total_bill), key=f"amt_paid_{st.session_state.form_gen}")
         balance_due = max(0.0, total_bill - amount_paid)
         
         if st.button("💾 Save & Generate Bill Slip"):
@@ -304,7 +301,7 @@ with tab1:
                 cursor.execute('''
                     INSERT INTO sales (customer_name, customer_mobile, vehicle_number, vehicle_model, items_summary, parts_total, total_mrp_sum, total_savings, labour_desc, labour_cost, total_bill, amount_paid, balance_due, payment_mode, date)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                لل''', (c_name, c_mobile, v_number, v_model, items_summary_str, parts_total_sum, total_mrp_sum, total_savings, labour_desc, labour_cost, total_bill, amount_paid, balance_due, pay_mode, current_date))
+                ''', (c_name, c_mobile, v_number, v_model, items_summary_str, parts_total_sum, total_mrp_sum, total_savings, labour_desc, labour_cost, total_bill, amount_paid, balance_due, pay_mode, current_date))
                 
                 sale_id = cursor.lastrowid
 
@@ -350,12 +347,9 @@ with tab1:
                     sms_link = f"sms:{c_mobile}?body={urllib.parse.quote(slip_text)}"
                     st.link_button("💬 Share via SMS", sms_link)
                 
-                # Automatically reset customer details and cart for next bill
+                # Completely wipe out inputs for the next entry
                 st.session_state.cart = []
-                st.session_state.c_name_input = ""
-                st.session_state.c_mobile_input = ""
-                st.session_state.v_number_input = ""
-                st.session_state.v_model_input = ""
+                st.session_state.form_gen += 1
                 st.rerun()
 
 # --------------------------------------------------------
