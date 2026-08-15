@@ -5,10 +5,10 @@ from datetime import datetime
 import urllib.parse
 
 # Page Configuration
-st.set_page_config(page_title="Pro Garage ERP", layout="wide", page_icon="🏎️")
+st.set_page_config(page_title="My Shivshakti Auto Parts & Service", layout="wide", page_icon="🏎️")
 
 # Database Setup
-conn = sqlite3.connect('garage_erp.db', check_same_thread=False)
+conn = sqlite3.connect('shivshakti_garage_v2.db', check_same_thread=False)
 c = conn.cursor()
 
 c.execute('''CREATE TABLE IF NOT EXISTS inventory (
@@ -16,76 +16,174 @@ c.execute('''CREATE TABLE IF NOT EXISTS inventory (
 
 c.execute('''CREATE TABLE IF NOT EXISTS bills (
     bill_id TEXT, customer_name TEXT, phone TEXT, vehicle TEXT, mechanic_name TEXT, 
-    payment_mode TEXT, total REAL, paid_amount REAL, balance_due REAL, date TEXT, items TEXT)''')
+    payment_mode TEXT, parts_charges REAL, labor_charges REAL, total REAL, paid_amount REAL, balance_due REAL, date TEXT, items TEXT)''')
 conn.commit()
 
 # --- App UI ---
-st.title("🏎️ Pro Garage ERP")
+st.title("🏎️ MY SHIVSHAKTI AUTO PARTS & SERVICE")
+st.caption("📍 Main Road, Rantham, Chikhli, Malkapur (MH) | 📞 9158551896")
+
 tab1, tab2, tab3 = st.tabs(["📝 Billing", "📦 Inventory", "📊 Records"])
 
 with tab1:
     st.subheader("New Service Bill")
+    
     col1, col2 = st.columns(2)
     with col1:
-        cust_name = st.text_input("Customer Name")
-        phone = st.text_input("Phone Number", "91")
+        cust_name = st.text_input("Customer Name", placeholder="e.g. Aditya chimkar")
+        phone = st.text_input("Phone Number (with 91)", value="91")
         mechanic = st.text_input("Mechanic Name")
     with col2:
-        vehicle = st.text_input("Vehicle Number")
+        vehicle = st.text_input("Vehicle Number", placeholder="e.g. MH19CH9695")
         pay_mode = st.selectbox("Payment Mode", ["Cash", "Online/UPI", "Udhar (Credit)"])
 
-    if "cart" not in st.session_state: st.session_state.cart = []
+    if "cart" not in st.session_state: 
+        st.session_state.cart = []
     
-    # Item Addition
-    with st.expander("➕ Add Items/Service"):
-        inv = pd.read_sql("SELECT * FROM inventory", conn)
-        selected_item = st.selectbox("Select Item", ["-- Custom --"] + inv['item_name'].tolist())
-        qty = st.number_input("Qty", 1, 100)
+    # Item/Service Addition Section
+    st.markdown("---")
+    st.markdown("### ➕ Add Parts or Labor/Work")
+    
+    inv = pd.read_sql("SELECT * FROM inventory", conn)
+    item_options = ["-- Custom Item / Work --"] + inv['item_name'].tolist() if not inv.empty else ["-- Custom Item / Work --"]
+    
+    with st.form("add_item_form", clear_on_submit=True):
+        selected_item = st.selectbox("Select Part from Inventory", item_options)
         
-        if selected_item == "-- Custom --":
-            custom_price = st.number_input("Selling Price (₹)", 0.0)
-            if st.button("Add Custom"):
-                st.session_state.cart.append({"name": "Service/Part", "price": custom_price, "qty": qty})
-        else:
-            row = inv[inv['item_name'] == selected_item].iloc[0]
-            if st.button("Add Item"):
-                st.session_state.cart.append({"name": selected_item, "price": row['selling_price'], "qty": qty})
-
-    if st.session_state.cart:
-        df_cart = pd.DataFrame(st.session_state.cart)
-        df_cart['total'] = df_cart['price'] * df_cart['qty']
-        st.table(df_cart)
-        
-        total = df_cart['total'].sum()
-        paid = st.number_input("Paid Amount (₹)", 0.0, float(total), float(total))
-        balance = total - paid
-        
-        if st.button("💾 Save & Share Bill"):
-            bill_id = f"BILL-{datetime.now().strftime('%Y%m%d%H%M%S')}"
-            items_str = ", ".join(df_cart['name'].tolist())
-            c.execute("INSERT INTO bills VALUES (?,?,?,?,?,?,?,?,?,?,?)",
-                      (bill_id, cust_name, phone, vehicle, mechanic, pay_mode, total, paid, balance, datetime.now().strftime('%Y-%m-%d'), items_str))
-            conn.commit()
+        col_a, col_b, col_c = st.columns(3)
+        with col_a:
+            item_type = st.selectbox("Type", ["Parts", "Labor / Work"])
+        with col_b:
+            custom_name = st.text_input("Custom Name (e.g. Chine clining)")
+        with col_c:
+            custom_price = st.number_input("Charges / Price (₹)", min_value=0.0, step=10.0)
             
-            # WhatsApp Message
-            wa_msg = f"🛠️ *Bill: {bill_id}*\nCustomer: {cust_name}\nMechanic: {mechanic}\nTotal: ₹{total}\nPaid: ₹{paid}\nBalance: ₹{balance}"
-            st.link_button("📲 Send via WhatsApp", f"https://wa.me/{phone}?text={urllib.parse.quote(wa_msg)}")
-            st.session_state.cart = []
+        qty = st.number_input("Quantity", min_value=1, value=1)
+        add_btn = st.form_submit_button("Add to Bill")
+        
+        if add_btn:
+            if selected_item != "-- Custom Item / Work --":
+                row = inv[inv['item_name'] == selected_item].iloc[0]
+                final_name = selected_item
+                final_price = row['selling_price']
+            else:
+                final_name = custom_name
+                final_price = custom_price
+                
+            if final_name:
+                st.session_state.cart.append({
+                    "name": final_name, 
+                    "type": item_type, 
+                    "price": final_price, 
+                    "qty": qty
+                })
+                st.success(f"Added {final_name} successfully!")
+                st.rerun()
+            else:
+                st.warning("Please provide a name or select an item.")
+
+    # Display Current Cart / Bill Summary
+    if st.session_state.cart:
+        st.markdown("---")
+        st.markdown("### 🧾 Current Bill Breakdown")
+        
+        df_cart = pd.DataFrame(st.session_state.cart)
+        df_cart['subtotal'] = df_cart['price'] * df_cart['qty']
+        
+        for idx, row in df_cart.iterrows():
+            col_x, col_y, col_z = st.columns([3, 2, 1])
+            with col_x:
+                st.write(f"**{row['name']}** ({row['type']}) x {row['qty']}")
+            with col_y:
+                st.write(f"₹{row['subtotal']:.2f}")
+            with col_z:
+                if st.button("❌", key=f"remove_{idx}"):
+                    st.session_state.cart.pop(idx)
+                    st.rerun()
+        
+        # Calculate parts vs labor charges
+        parts_charges = df_cart[df_cart['type'] == 'Parts']['subtotal'].sum()
+        labor_charges = df_cart[df_cart['type'] == 'Labor / Work']['subtotal'].sum()
+        total_bill = parts_charges + labor_charges
+        
+        st.info(f"📦 Parts: ₹{parts_charges:.2f} | 👨‍🔧 Labor: ₹{labor_charges:.2f} | 💰 **Total: ₹{total_bill:.2f}**")
+        
+        paid_amount = st.number_input("Paid Amount (₹)", min_value=0.0, max_value=float(total_bill), value=float(total_bill), step=10.0)
+        pending_udhar = total_bill - paid_amount
+        
+        if st.button("💾 Save Bill & Generate WhatsApp Message"):
+            if not cust_name or not vehicle:
+                st.warning("⚠️ Please enter Customer Name and Vehicle Number.")
+            else:
+                bill_id = f"BILL-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+                date_str = datetime.now().strftime('%Y-%m-%d %H:%M')
+                
+                # Combine work details for display
+                work_details_str = "\n".join([f"- {i['name']} (x{i['qty']})" for i in st.session_state.cart])
+                items_db_str = ", ".join([f"{i['name']} (x{i['qty'])})" for i in st.session_state.cart])
+                
+                c.execute("INSERT INTO bills VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                          (bill_id, cust_name, phone, vehicle, mechanic, pay_mode, parts_charges, labor_charges, total_bill, paid_amount, pending_udhar, date_str, items_db_str))
+                conn.commit()
+                
+                st.success("✅ Bill Saved Successfully in Records!")
+                
+                # Exact WhatsApp Template requested
+                wa_msg = f"""🏎️ *MY SHIVSHAKTI AUTO PARTS & SERVICE*
+📍 Main Road, Rantham, Chikhli, Malkapur (MH)
+📞 9158551896
+-----------------------------------
+👤 *Customer:* {cust_name}
+🚘 *Vehicle No:* {vehicle}
+📅 *Date:* {date_str}
+-----------------------------------
+🔧 *Work Details:* 
+{work_details_str}
+-----------------------------------
+📦 *Parts Charges:* ₹{parts_charges:.2f}
+👨‍🔧 *Labor Charges:* ₹{labor_charges:.2f}
+💰 *Total Bill:* ₹{total_bill:.2f}
+✅ *Paid Amount:* ₹{paid_amount:.2f}
+🔴 *Pending Udhar:* ₹{pending_udhar:.2f}
+-----------------------------------
+🙏 *धन्यवाद!*"""
+
+                encoded_whatsapp_url = f"https://wa.me/{phone}?text={urllib.parse.quote(wa_msg)}"
+                st.link_button("📲 Send WhatsApp Bill to Customer", encoded_whatsapp_url)
+                
+                if st.button("🔄 Clear & Start New Bill"):
+                    st.session_state.cart = []
+                    st.rerun()
 
 with tab2:
-    st.subheader("Manage Inventory")
-    with st.form("inv_form"):
-        i_name = st.text_input("Item Name")
-        i_mrp = st.number_input("MRP (₹)")
-        i_price = st.number_input("Selling Price (₹)")
-        i_stock = st.number_input("Stock", 0)
-        if st.form_submit_button("Save Item"):
-            c.execute("INSERT INTO inventory (item_name, mrp, selling_price, stock) VALUES (?,?,?,?)", (i_name, i_mrp, i_price, i_stock))
-            conn.commit()
-            st.rerun()
-    st.dataframe(pd.read_sql("SELECT * FROM inventory", conn))
+    st.subheader("📦 Manage Inventory & Spares")
+    with st.form("inv_form", clear_on_submit=True):
+        i_name = st.text_input("Part/Item Name")
+        i_mrp = st.number_input("MRP (₹)", min_value=0.0, step=10.0)
+        i_price = st.number_input("Selling Price (₹)", min_value=0.0, step=10.0)
+        i_stock = st.number_input("Stock Quantity", min_value=0, value=10)
+        
+        if st.form_submit_button("Save to Inventory"):
+            if i_name:
+                c.execute("INSERT INTO inventory (item_name, mrp, selling_price, stock) VALUES (?,?,?,?)", 
+                          (i_name, i_mrp, i_price, i_stock))
+                conn.commit()
+                st.success(f"Added {i_name} to inventory!")
+                st.rerun()
+            else:
+                st.warning("Please enter item name.")
+                
+    inv_df = pd.read_sql("SELECT * FROM inventory", conn)
+    if not inv_df.empty:
+        st.dataframe(inv_df, use_container_width=True)
+    else:
+        st.info("No spare parts added in inventory yet.")
 
 with tab3:
-    st.subheader("Records")
-    st.dataframe(pd.read_sql("SELECT * FROM bills", conn))
-            
+    st.subheader("📊 Saved Bills & Ledger Records")
+    bills_df = pd.read_sql("SELECT * FROM bills ORDER BY date DESC", conn)
+    if not bills_df.empty:
+        st.dataframe(bills_df, use_container_width=True)
+    else:
+        st.info("No bills recorded yet.")
+    
