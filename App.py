@@ -12,7 +12,7 @@ st.set_page_config(
     page_icon="🏎️"
 )
 
-# 🌟 Advanced Mobile Navigation CSS with Big Bold Names & Icons
+# 🌟 Advanced Mobile Navigation CSS with Large Top Header & Horizontal Buttons
 st.markdown("""
     <style>
     .stApp {
@@ -25,26 +25,28 @@ st.markdown("""
     footer {visibility: hidden;}
     header {visibility: hidden;}
 
-    .hero-card {
-        background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
-        border: 1px solid #cbd5e1;
-        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
-        border-radius: 16px;
-        padding: 15px;
-        margin-bottom: 15px;
+    /* 🌟 Bigger and Prominent Shop Title on Top */
+    .top-header {
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        border-bottom: 4px solid #f59e0b;
+        padding: 18px 10px;
+        margin: -1rem -1rem 15px -1rem;
         text-align: center;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
-    .hero-title {
-        color: #d97706;
-        font-size: 20px;
-        font-weight: 800;
+    .top-title {
+        color: #f59e0b;
+        font-size: 22px;
+        font-weight: 900;
         text-transform: uppercase;
         margin: 0;
+        letter-spacing: 0.5px;
     }
-    .hero-sub {
-        color: #475569;
-        font-size: 12px;
-        margin-top: 5px;
+    .top-sub {
+        color: #cbd5e1;
+        font-size: 13px;
+        margin-top: 6px;
+        font-weight: 500;
     }
 
     /* Force clear dark text inside all input fields */
@@ -81,8 +83,8 @@ st.markdown("""
         border: none !important;
         box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
         width: 100%;
-        padding: 12px;
-        font-size: 16px !important;
+        padding: 10px 4px;
+        font-size: 14px !important;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -90,7 +92,7 @@ st.markdown("""
 # --------------------------------------------------------
 # DATABASE SETUP
 # --------------------------------------------------------
-conn = sqlite3.connect("autoparts_shop_v9.db", check_same_thread=False)
+conn = sqlite3.connect("autoparts_shop_v10.db", check_same_thread=False)
 cursor = conn.cursor()
 
 cursor.execute('''
@@ -126,12 +128,12 @@ cursor.execute('''
 conn.commit()
 
 # --------------------------------------------------------
-# UI HEADER
+# UI TOP HEADER (BIG & ON TOP)
 # --------------------------------------------------------
 st.markdown("""
-    <div class="hero-card">
-        <p class="hero-title">🏎️ MY SHIVSHAKTI AUTO PARTS & SERVICE</p>
-        <p class="hero-sub">📍 Main Road, Rantham, Chikhli, Malkapur (MH) | 📞 9158551896</p>
+    <div class="top-header">
+        <p class="top-title">🏎️ MY SHIVSHAKTI AUTO PARTS & SERVICE</p>
+        <p class="top-sub">📍 Main Road, Rantham, Chikhli, Malkapur (MH) &nbsp;|&nbsp; 📞 9158551896</p>
     </div>
 """, unsafe_allow_html=True)
 
@@ -139,7 +141,7 @@ st.markdown("""
 if "menu_tab" not in st.session_state:
     st.session_state.menu_tab = "🛒 Billing"
 
-# 🌟 Large & Clear Clickable Menu Buttons for Mobile
+# 🌟 Horizontal Navigation Buttons in a Single Row
 m1, m2, m3, m4 = st.columns(4)
 with m1:
     if st.button("🛒 Billing", key="btn_bill"):
@@ -432,4 +434,4 @@ elif st.session_state.menu_tab == "📊 Records":
         st.dataframe(records_df, use_container_width=True)
     else:
         st.info("कोई पुराना रिकॉर्ड नहीं मिला।")
-        
+            
