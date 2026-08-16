@@ -3,6 +3,7 @@ import sqlite3
 import pandas as pd
 from datetime import datetime
 import urllib.parse
+import base64
 
 # 🎨 Page Configuration (Mobile & Desktop Optimized)
 st.set_page_config(
@@ -125,11 +126,9 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# 🌟 Session State for Menu Selection
 if "menu_tab" not in st.session_state:
     st.session_state.menu_tab = "🛒 Billing"
 
-# 🌟 Navigation Bar (4 Columns)
 m1, m2, m3, m4 = st.columns(4)
 with m1:
     if st.button("🛒 Billing", key="btn_bill"):
@@ -196,7 +195,6 @@ if st.session_state.menu_tab == "🛒 Billing":
                 "stock": int(row['stock'])
             }
 
-    # 🌟 Callback function to auto-fill fields when selection changes
     def update_item_fields():
         selected = st.session_state[f"sel_item_{st.session_state.form_gen}"]
         if selected != "-- Custom Item (मैन्युअल लिखें) --" and selected in inventory_dict:
@@ -210,7 +208,6 @@ if st.session_state.menu_tab == "🛒 Billing":
 
     selected_inv_item = st.selectbox("Select Part from Inventory", item_choices, key=f"sel_item_{st.session_state.form_gen}", on_change=update_item_fields)
 
-    # Initialize default state keys if not present
     if f"p_name_{st.session_state.form_gen}" not in st.session_state:
         st.session_state[f"p_name_{st.session_state.form_gen}"] = ""
     if f"p_mrp_{st.session_state.form_gen}" not in st.session_state:
@@ -259,7 +256,7 @@ if st.session_state.menu_tab == "🛒 Billing":
             
             col_i1, col_i2, col_i3 = st.columns([3, 2, 1])
             with col_i1:
-                st.write(f"**{item['name']}** (x{item['qty']}) | MRP: ₹{item['mrp']} | Sell: ₹{item['price']}")
+                st.write(f"• {item['name']} (Qty: {item['qty']}) | MRP: ₹{item['mrp']} | Sell: ₹{item['price']}")
             with col_i2:
                 st.write(f"₹{item['total']:.2f}")
             with col_i3:
@@ -276,10 +273,45 @@ if st.session_state.menu_tab == "🛒 Billing":
         """, unsafe_allow_html=True)
         
         st.markdown("---")
-        labour_desc = st.text_input("Labour / Fitting Work Description", value="", placeholder="उदा. सर्विसिंग और फिटिंग चार्ज", key=f"lab_desc_{st.session_state.form_gen}")
-        labour_cost = st.number_input("Labour Charges (₹)", min_value=0.0, value=0.0, step=10.0, key=f"lab_cost_{st.session_state.form_gen}")
+        st.markdown("### 👨‍🔧 Add Labour & Services (अलग-अलग लेबर चार्ज जोड़ें)")
         
-        total_bill = parts_total_sum + labour_cost
+        if "labour_list" not in st.session_state:
+            st.session_state.labour_list = []
+            
+        col_l1, col_l2, col_l3 = st.columns([3, 2, 1])
+        with col_l1:
+            l_desc_input = st.text_input("Service / Labour Name", placeholder="उदा. Servicing / Washing / Engine Fitting", key=f"l_desc_input_{st.session_state.form_gen}")
+        with col_l2:
+            l_cost_input = st.number_input("Labour Cost (₹)", min_value=0.0, step=10.0, key=f"l_cost_input_{st.session_state.form_gen}")
+        with col_l3:
+            st.markdown("<br>", unsafe_allow_html=True)
+            if st.button("➕ Add Labour"):
+                if l_desc_input and l_cost_input > 0:
+                    st.session_state.labour_list.append({
+                        "desc": l_desc_input,
+                        "cost": l_cost_input
+                    })
+                    st.success("Labour added!")
+                    st.rerun()
+                else:
+                    st.warning("लेबर का नाम और सही कीमत दर्ज करें!")
+                    
+        total_labour_cost = 0.0
+        labour_desc_summary = []
+        if st.session_state.labour_list:
+            for l_idx, lab in enumerate(st.session_state.labour_list):
+                total_labour_cost += lab['cost']
+                labour_desc_summary.append(f"{lab['desc']} (₹{lab['cost']})")
+                
+                cl1, cl2 = st.columns([5, 1])
+                with cl1:
+                    st.write(f"👉 **{lab['desc']}**: ₹{lab['cost']:.2f}")
+                with cl2:
+                    if st.button("❌", key=f"del_lab_{l_idx}"):
+                        st.session_state.labour_list.pop(l_idx)
+                        st.rerun()
+                        
+        total_bill = parts_total_sum + total_labour_cost
         
         st.markdown(f"""
             <div style="background: #fef3c7; border: 1px solid #f59e0b; padding: 15px; border-radius: 10px; margin: 10px 0;">
@@ -298,14 +330,16 @@ if st.session_state.menu_tab == "🛒 Billing":
                 current_date = datetime.now().strftime("%d-%m-%Y %I:%M %p")
                 
                 items_desc_list = [f"{item['name']} (x{item['qty']})" for item in st.session_state.cart]
-                if labour_desc:
-                    items_desc_list.append(f"Labour: {labour_desc}")
+                for lab in st.session_state.labour_list:
+                    items_desc_list.append(f"Labour: {lab['desc']} (₹{lab['cost']})")
                 items_summary_str = ", ".join(items_desc_list)
+                
+                labour_final_desc_str = ", ".join(labour_desc_summary)
                 
                 cursor.execute('''
                     INSERT INTO sales (customer_name, customer_mobile, vehicle_number, vehicle_model, items_summary, parts_total, total_mrp_sum, total_savings, labour_desc, labour_cost, total_bill, amount_paid, balance_due, payment_mode, date)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (c_name, c_mobile, v_number, v_model, items_summary_str, parts_total_sum, total_mrp_sum, total_savings, labour_desc, labour_cost, total_bill, amount_paid, balance_due, pay_mode, current_date))
+                ''', (c_name, c_mobile, v_number, v_model, items_summary_str, parts_total_sum, total_mrp_sum, total_savings, labour_final_desc_str, total_labour_cost, total_bill, amount_paid, balance_due, pay_mode, current_date))
                 
                 sale_id = cursor.lastrowid
 
@@ -315,8 +349,9 @@ if st.session_state.menu_tab == "🛒 Billing":
                 conn.commit()
                 st.success(f"✅ बिल सफलतापूर्वक सेव हो गया! ID: #{sale_id}")
                 
-        # 📲 WhatsApp & Print/PDF Sharing Section
+        # 📲 WhatsApp & Download PDF Section with Discount Included
         formatted_items = "\n".join([f"{idx+1}. {item['name']} (x{item['qty']}) = ₹{item['total']:.2f}" for idx, item in enumerate(st.session_state.cart)])
+        formatted_labour = "\n".join([f"• {lab['desc']}: ₹{lab['cost']:.2f}" for lab in st.session_state.labour_list]) if st.session_state.labour_list else "None"
         
         slip_text = f"""🏎️ *MY SHIVSHAKTI AUTO PARTS & SERVICE*
 📍 Main Road, Rantham, Chikhli, Malkapur (MH)
@@ -329,9 +364,12 @@ if st.session_state.menu_tab == "🛒 Billing":
 🔧 *Parts List:*
 {formatted_items}
 -----------------------------------
+👨‍🔧 *Labour/Services:*
+{formatted_labour}
+-----------------------------------
 📦 Parts Total: ₹{parts_total_sum:.2f}
-👨‍🔧 Labour: ₹{labour_cost:.2f}
-🎉 *You Saved:* ₹{total_savings:.2f}
+👨‍🔧 Labour Total: ₹{total_labour_cost:.2f}
+🎉 *Total Discount (Savings):* ₹{total_savings:.2f}
 -----------------------------------
 💰 *Total Bill:* ₹{total_bill:.2f}
 ✅ *Paid:* ₹{amount_paid:.2f}
@@ -339,7 +377,7 @@ if st.session_state.menu_tab == "🛒 Billing":
 -----------------------------------
 🙏 *धन्यवाद! फिर पधारें।*"""
 
-        st.markdown("### 📤 Share Estimate & Print PDF")
+        st.markdown("### 📤 Share Estimate & Download PDF")
         clean_mobile = c_mobile.replace("+", "").replace(" ", "")
         if len(clean_mobile) == 10:
             clean_mobile = "91" + clean_mobile
@@ -351,30 +389,35 @@ if st.session_state.menu_tab == "🛒 Billing":
             
         with col_s2:
             items_html = "".join([f"<tr><td>{itm['name']}</td><td style='text-align:center;'>{itm['qty']}</td><td style='text-align:right;'>₹{itm['total']:.2f}</td></tr>" for itm in st.session_state.cart])
+            labour_html = "".join([f"<tr><td colspan='2'>{lab['desc']}</td><td style='text-align:right;'>₹{lab['cost']:.2f}</td></tr>" for lab in st.session_state.labour_list])
+            
             print_html = f"""
                 <html>
-                <body style="font-family: Arial; padding: 20px;">
+                <head><meta charset="utf-8"></head>
+                <body style="font-family: Arial; padding: 20px; color: #000;">
                     <h2 style="text-align:center; color:#d97706; margin-bottom:0;">MY SHIVSHAKTI AUTO PARTS & SERVICE</h2>
-                    <p style="text-align:center; margin-top:5px;">Main Road, Rantham, Chikhli, Malkapur (MH) | Ph: 9158551896</p>
+                    <p style="text-align:center; margin-top:5px; font-size:12px;">Main Road, Rantham, Chikhli, Malkapur (MH) | Ph: 9158551896</p>
                     <hr>
                     <p><b>Customer:</b> {c_name} &nbsp;&nbsp;|&nbsp;&nbsp; <b>Vehicle:</b> {v_number}</p>
                     <p><b>Date:</b> {datetime.now().strftime('%d-%m-%Y %I:%M %p')}</p>
                     <table border="1" style="width:100%; border-collapse:collapse; margin-top:10px;" cellpadding="8">
-                        <tr style="background:#f1f5f9;"><th>Item Name</th><th>Qty</th><th>Total (₹)</th></tr>
+                        <tr style="background:#f1f5f9;"><th>Item Name</th><th style="text-align:center;">Qty</th><th style="text-align:right;">Total (₹)</th></tr>
                         {items_html}
+                        {labour_html}
                     </table>
-                    <h3>Labour Charges: ₹{labour_cost:.2f}</h3>
-                    <h2 style="color:#b45309;">Final Bill Amount: ₹{total_bill:.2f}</h2>
+                    <p style="margin-top:10px; color:#166534; font-weight:bold;">🎉 Customer Total Discount (Savings): ₹{total_savings:.2f}</p>
+                    <h2 style="color:#b45309; text-align:right;">Final Bill Amount: ₹{total_bill:.2f}</h2>
                     <p style="text-align:center; margin-top:30px;"><b>धन्यवाद! फिर पधारें।</b></p>
-                    <script>window.print();</script>
                 </body>
                 </html>
             """
-            encoded_html = urllib.parse.quote(print_html)
-            st.markdown(f'<a href="data:text/html;charset=utf-8,{encoded_html}" target="_blank"><button style="background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color:white; border:none; border-radius:10px; padding:10px; width:100%; font-weight:800; cursor:pointer;">🖨️ Print / Save PDF Estimate</button></a>', unsafe_allow_html=True)
+            b64 = base64.b64encode(print_html.encode('utf-8')).decode('utf-8')
+            pdf_download_link = f'<a href="data:text/html;base64,{b64}" download="Bill_{c_name}_{v_number}.html" target="_blank"><button style="background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color:white; border:none; border-radius:10px; padding:10px; width:100%; font-weight:800; cursor:pointer;">📥 Download Bill / PDF File</button></a>'
+            st.markdown(pdf_download_link, unsafe_allow_html=True)
         
         if st.button("🔄 Create New Bill (Reset Cart)"):
             st.session_state.cart = []
+            st.session_state.labour_list = []
             st.session_state.form_gen += 1
             st.rerun()
 
@@ -410,48 +453,4 @@ elif st.session_state.menu_tab == "📦 Stock":
 
 # --------------------------------------------------------
 # TAB 3: UDHAR KHATA MANAGEMENT
-# --------------------------------------------------------
-elif st.session_state.menu_tab == "📖 Udhar":
-    st.subheader("📖 Udhar Khata (Pending Dues)")
-    
-    udhar_df = pd.read_sql("SELECT id, customer_name, customer_mobile, vehicle_number, items_summary, total_bill, amount_paid, balance_due, date FROM sales WHERE balance_due > 0", conn)
-    
-    if not udhar_df.empty:
-        st.dataframe(udhar_df, use_container_width=True)
-        
-        st.markdown("### Clear or Pay Udhar")
-        pay_id = st.number_input("Enter Estimate ID to Clear Due", min_value=1, step=1)
-        pay_amt = st.number_input("Amount Paying Now (₹)", min_value=0.0, step=10.0)
-        
-        if st.button("Confirm Payment Receipt"):
-            cursor.execute("SELECT balance_due, amount_paid FROM sales WHERE id=?", (pay_id,))
-            row = cursor.fetchone()
-            if row:
-                current_due = row[0]
-                current_paid = row[1]
-                
-                if pay_amt > current_due:
-                    st.warning(f"भुगतान बकाया राशि से अधिक नहीं हो सकता: ₹{current_due:.2f}")
-                else:
-                    new_paid = current_paid + pay_amt
-                    new_due = current_due - pay_amt
-                    cursor.execute("UPDATE sales SET amount_paid=?, balance_due=? WHERE id=?", (new_paid, new_due, pay_id))
-                    conn.commit()
-                    st.success(f"✅ भुगतान दर्ज हो गया! नया बकाया: ₹{new_due:.2f}")
-                    st.rerun()
-            else:
-                st.error("अमान्य एस्टीमेट ID!")
-    else:
-        st.info("🎉 शानदार! कोई भी उधार बकाया नहीं है।")
-
-# --------------------------------------------------------
-# TAB 4: HISTORICAL RECORDS
-# --------------------------------------------------------
-elif st.session_state.menu_tab == "📊 Records":
-    st.subheader("📊 All Sales & Service Records")
-    records_df = pd.read_sql("SELECT id, customer_name, vehicle_number, items_summary, total_bill, amount_paid, balance_due, total_savings, payment_mode, date FROM sales ORDER BY id DESC", conn)
-    if not records_df.empty:
-        st.dataframe(records_df, use_container_width=True)
-    else:
-        st.info("कोई पुराना रिकॉर्ड नहीं मिला।")
-            
+# --
