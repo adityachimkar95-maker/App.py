@@ -523,12 +523,13 @@ if st.session_state.menu_tab == "📦 Stock":
     
     stock_df = pd.read_sql("SELECT * FROM parts", conn)
     if not stock_df.empty:
-        # ⚠️ Low Stock Alert (मान लीजिए स्टॉक 5 या उससे कम होने पर लो स्टॉक है)
+        # ⚠️ Low Stock Alert (स्टॉक 5 या उससे कम होने पर)
         LOW_STOCK_LIMIT = 5
         low_stock_df = stock_df[stock_df['stock'] <= LOW_STOCK_LIMIT]
         
         if not low_stock_df.empty:
-            st.warning(f"⚠️ चेतावनी: {len(high_alert := low_stock_df)} आइटम का स्टॉक बहुत कम हो गया है!")
+            # टेक्स्ट कलर समस्या को ठीक करने के लिए साफ़ मैसेज
+            st.error(f"⚠️ चेतावनी: कुल {len(low_stock_df)} आइटम का स्टॉक 5 या उससे कम हो गया है!")
             
             # Low Stock Order Generate करने का बटन
             if st.button("📋 Generate Low Stock Order List"):
@@ -539,28 +540,24 @@ if st.session_state.menu_tab == "📦 Stock":
                 
                 st.text_area("Copy Order Text / WhatsApp Share:", value=order_text, height=150)
         
-        # डेटाफ्रेम दिखाना (लो स्टॉक वाले आइटम्स को हाईलाइट करने के लिए आइकॉन या कंडीशनल फॉर्मेटिंग)
+        # डेटाफ्रेम दिखाना
         st.dataframe(stock_df, use_container_width=True)
         
         st.markdown("### Update or Delete Part")
         selected_part = st.selectbox("पार्ट चुनें (संपादित या हटाने के लिए)", stock_df['name'].tolist())
         
         part_data = stock_df[stock_df['name'] == selected_part].iloc[0]
-        part_id = part_data['id'] # (ध्यान दें: आपके डेटाबेस टेबल में 'id' कॉलम होना चाहिए)
+        part_id = part_data['id'] 
         
-        with st.form("update_delete_form"):
-            up_name = st.text_input("Part Name", value=part_data['name'])
-            up_mrp = st.number_input("MRP (₹)", min_value=0.0, value=float(part_data['mrp']), step=10.0)
-            up_price = st.number_input("Selling Price (₹)", min_value=0.0, value=float(part_data['selling_price']), step=10.0)
-            up_stock = st.number_input("Stock Quantity", min_value=0, value=int(part_data['stock']))
-            
-            col1, col2 = st.columns(2)
-            with col1:
-                update_btn = st.form_submit_button("🔄 Update Stock")
-            with col2:
-                delete_btn = st.form_submit_button("🗑️ Delete Part")
-                
-            if update_btn:
+        # यहाँ फॉर्म की जगह नॉर्मल इनपुट्स का इस्तेमाल किया है ताकि Update और Delete सही से काम करें
+        up_name = st.text_input("Edit Part Name", value=part_data['name'])
+        up_mrp = st.number_input("Edit MRP (₹)", min_value=0.0, value=float(part_data['mrp']), step=10.0)
+        up_price = st.number_input("Edit Selling Price (₹)", min_value=0.0, value=float(part_data['selling_price']), step=10.0)
+        up_stock = st.number_input("Edit Stock Quantity", min_value=0, value=int(part_data['stock']))
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("🔄 Update Stock"):
                 cursor.execute("""
                     UPDATE parts 
                     SET name = ?, mrp = ?, selling_price = ?, stock = ? 
@@ -570,13 +567,15 @@ if st.session_state.menu_tab == "📦 Stock":
                 st.success("✅ स्टॉक सफलतापूर्वक अपडेट हो गया!")
                 st.rerun()
                 
-            if delete_btn:
+        with col2:
+            if st.button("🗑️ Delete Part"):
                 cursor.execute("DELETE FROM parts WHERE id = ?", (part_id,))
                 conn.commit()
                 st.error("🗑️ पार्ट को स्टॉक से हटा दिया गया है!")
                 st.rerun()
     else:
         st.info("स्टॉक में कोई सामान उपलब्ध नहीं है।")
+
 
 # --------------------------------------------------------
 # TAB 3: UDHAR KHATA MANAGEMENT
