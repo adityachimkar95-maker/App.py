@@ -325,7 +325,6 @@ if st.session_state.menu_tab == "🛒 Billing":
                     st.session_state.labour_list.pop(l_idx)
                     st.rerun()
 
-    # 🌟 NEW SECTION: Extra Charges / Other Work (अतिरिक्त काम का अलग पैसा)
     st.markdown("---")
     st.markdown("### 🛠️ Add Extra Charges / Other Work (अतिरिक्त अन्य काम का पैसा)")
     
@@ -406,7 +405,7 @@ if st.session_state.menu_tab == "🛒 Billing":
             conn.commit()
             st.success(f"✅ बिल सफलतापूर्वक सेव हो गया! ID: #{sale_id}")
             
-    # 📲 WhatsApp & Download PDF Section with Discount and Extras Included
+    # 📲 WhatsApp & Download PDF Section
     formatted_items = "\n".join([f"{idx+1}. {item['name']} (x{item['qty']}) = ₹{item['total']:.2f}" for idx, item in enumerate(st.session_state.cart)])
     formatted_labour = "\n".join([f"• {lab['desc']}: ₹{lab['cost']:.2f}" for lab in st.session_state.labour_list]) if st.session_state.labour_list else "None"
     formatted_extra = "\n".join([f"• {ext['desc']}: ₹{ext['cost']:.2f}" for ext in st.session_state.extra_list]) if st.session_state.extra_list else "None"
@@ -466,4 +465,7 @@ if st.session_state.menu_tab == "🛒 Billing":
                 <table border="1" style="width:100%; border-collapse:collapse; margin-top:10px;" cellpadding="8">
                     <tr style="background:#f1f5f9;"><th>Item Name</th><th style="text-align:center;">Qty</th><th style="text-align:right;">Total (₹)</th></tr>
                     {items_html}
-                    {labo
+                    {labour_html}
+                    {extra_html}
+                </table>
+                <p style="margin-top:10px; 
