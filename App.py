@@ -11,7 +11,7 @@ st.set_page_config(
     page_icon="🏎️"
 )
 
-# 🌟 Clean & Mobile Touch-Friendly CSS (Fixes Dropdown & Visuals)
+# 🌟 Clean & Mobile Touch-Friendly CSS
 st.markdown("""
     <style>
     .stApp {
@@ -191,29 +191,40 @@ if st.session_state.menu_tab == "🛒 Billing":
             item_name = row['name']
             item_choices.append(item_name)
             inventory_dict[item_name] = {
-                "mrp": row['mrp'],
-                "selling_price": row['selling_price'],
-                "stock": row['stock']
+                "mrp": float(row['mrp']),
+                "selling_price": float(row['selling_price']),
+                "stock": int(row['stock'])
             }
 
-    selected_inv_item = st.selectbox("Select Part from Inventory", item_choices, key=f"sel_item_{st.session_state.form_gen}")
+    # 🌟 Callback function to auto-fill fields when selection changes
+    def update_item_fields():
+        selected = st.session_state[f"sel_item_{st.session_state.form_gen}"]
+        if selected != "-- Custom Item (मैन्युअल लिखें) --" and selected in inventory_dict:
+            st.session_state[f"p_name_{st.session_state.form_gen}"] = selected
+            st.session_state[f"p_mrp_{st.session_state.form_gen}"] = inventory_dict[selected]["mrp"]
+            st.session_state[f"p_sell_{st.session_state.form_gen}"] = inventory_dict[selected]["selling_price"]
+        else:
+            st.session_state[f"p_name_{st.session_state.form_gen}"] = ""
+            st.session_state[f"p_mrp_{st.session_state.form_gen}"] = 0.0
+            st.session_state[f"p_sell_{st.session_state.form_gen}"] = 0.0
 
-    default_mrp = 0.0
-    default_selling = 0.0
-    prefilled_name = ""
-    
-    if selected_inv_item != "-- Custom Item (मैन्युअल लिखें) --" and selected_inv_item in inventory_dict:
-        default_mrp = float(inventory_dict[selected_inv_item]["mrp"])
-        default_selling = float(inventory_dict[selected_inv_item]["selling_price"])
-        prefilled_name = selected_inv_item
+    selected_inv_item = st.selectbox("Select Part from Inventory", item_choices, key=f"sel_item_{st.session_state.form_gen}", on_change=update_item_fields)
+
+    # Initialize default state keys if not present
+    if f"p_name_{st.session_state.form_gen}" not in st.session_state:
+        st.session_state[f"p_name_{st.session_state.form_gen}"] = ""
+    if f"p_mrp_{st.session_state.form_gen}" not in st.session_state:
+        st.session_state[f"p_mrp_{st.session_state.form_gen}"] = 0.0
+    if f"p_sell_{st.session_state.form_gen}" not in st.session_state:
+        st.session_state[f"p_sell_{st.session_state.form_gen}"] = 0.0
 
     col_a, col_b, col_c, col_d = st.columns(4)
     with col_a:
-        p_name_final = st.text_input("Part Name", value=prefilled_name, placeholder="पार्ट का नाम", key=f"p_name_{st.session_state.form_gen}")
+        p_name_final = st.text_input("Part Name", key=f"p_name_{st.session_state.form_gen}")
     with col_b:
-        item_mrp_input = st.number_input("MRP (₹)", min_value=0.0, value=default_mrp, step=10.0, key=f"p_mrp_{st.session_state.form_gen}")
+        item_mrp_input = st.number_input("MRP (₹)", min_value=0.0, step=10.0, key=f"p_mrp_{st.session_state.form_gen}")
     with col_c:
-        item_selling_input = st.number_input("Selling Price (₹)", min_value=0.0, value=default_selling, step=10.0, key=f"p_sell_{st.session_state.form_gen}")
+        item_selling_input = st.number_input("Selling Price (₹)", min_value=0.0, step=10.0, key=f"p_sell_{st.session_state.form_gen}")
     with col_d:
         qty_input = st.number_input("Quantity", min_value=1, value=1, key=f"p_qty_{st.session_state.form_gen}")
 
@@ -443,4 +454,4 @@ elif st.session_state.menu_tab == "📊 Records":
         st.dataframe(records_df, use_container_width=True)
     else:
         st.info("कोई पुराना रिकॉर्ड नहीं मिला।")
-                
+            
