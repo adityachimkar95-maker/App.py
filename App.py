@@ -12,26 +12,79 @@ st.set_page_config(
     page_icon="🏎️"
 )
 
-# 🌟 Clean, Proportionate & Larger Font Mobile-Friendly CSS
-css_code = "<style>" \
-           ".stApp { background-color: #f8fafc; color: #0f172a; font-family: 'Inter', sans-serif; }" \
-           "#MainMenu {visibility: hidden;} footer {visibility: hidden;} header {visibility: hidden;}" \
-           ".top-header { background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%); border: 2px solid #cbd5e1; border-bottom: 4px solid #f59e0b; padding: 18px 12px; margin-bottom: 20px; text-align: center; border-radius: 12px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05); }" \
-           ".top-title { color: #d97706; font-size: 22px; font-weight: 900; text-transform: uppercase; margin: 0; letter-spacing: 0.5px; }" \
-           ".top-sub { color: #334155; font-size: 14px; margin-top: 6px; font-weight: 700; }" \
-           ".stTextInput input, .stNumberInput input, .stSelectbox div[data-baseweb='select'] { background-color: #ffffff !important; color: #0f172a !important; border: 1.5px solid #94a3b8 !important; border-radius: 8px !important; padding: 10px 12px !important; font-size: 16px !important; font-weight: 600 !important; }" \
-           "label, .stMarkdown p, span { color: #1e293b !important; font-size: 15px !important; font-weight: 700 !important; }" \
-           "h3 { font-size: 18px !important; color: #0f172a !important; font-weight: 800 !important; }" \
-           ".stButton>button, .stFormSubmitButton>button { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important; color: #ffffff !important; border-radius: 10px !important; font-weight: 800 !important; border: none !important; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3); width: 100%; padding: 10px 4px; font-size: 15px !important; }" \
-           "</style>"
+# 🌟 Clean, Proportional & Touch-Friendly CSS (Larger Fonts)
+st.markdown("""
+    <style>
+    .stApp {
+        background-color: #f8fafc;
+        color: #0f172a;
+        font-family: 'Inter', sans-serif;
+    }
+    
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
 
-st.markdown(css_code, unsafe_allow_html=True)
+    .top-header {
+        background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+        border: 2px solid #cbd5e1;
+        border-bottom: 4px solid #f59e0b;
+        padding: 18px 12px;
+        margin-bottom: 15px;
+        text-align: center;
+        border-radius: 12px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    }
+    .top-title {
+        color: #d97706;
+        font-size: 22px;
+        font-weight: 900;
+        text-transform: uppercase;
+        margin: 0;
+        letter-spacing: 0.5px;
+    }
+    .top-sub {
+        color: #334155;
+        font-size: 14px;
+        margin-top: 6px;
+        font-weight: 700;
+    }
+
+    .stTextInput input, .stNumberInput input {
+        background-color: #ffffff !important;
+        color: #0f172a !important;
+        border: 2px solid #94a3b8 !important;
+        border-radius: 8px !important;
+        padding: 10px 12px !important;
+        font-size: 16px !important;
+        font-weight: 600 !important;
+    }
+    
+    label, .stMarkdown p, span {
+        color: #1e293b !important;
+        font-size: 15px !important;
+        font-weight: 700 !important;
+    }
+
+    .stButton>button, .stFormSubmitButton>button {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+        color: #ffffff !important;
+        border-radius: 10px !important;
+        font-weight: 800 !important;
+        border: none !important;
+        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+        width: 100%;
+        padding: 10px 4px;
+        font-size: 15px !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
 # --------------------------------------------------------
 # DATABASE SETUP
 # --------------------------------------------------------
 conn = sqlite3.connect("autoparts_shop_v12.db", check_same_thread=False)
-cursor = conn.cursor() 
+cursor = conn.cursor()
 
 cursor.execute('''
     CREATE TABLE IF NOT EXISTS parts (
@@ -70,11 +123,12 @@ conn.commit()
 # --------------------------------------------------------
 # UI TOP HEADER
 # --------------------------------------------------------
-header_html = "<div class='top-header'>" \
-              "<p class='top-title'>🏎️ MY SHIVSHAKTI AUTO PARTS & SERVICE</p>" \
-              "<p class='top-sub'>📍 Main Road, Rantham, Chikhli, Malkapur (MH) &nbsp;|&nbsp; 📞 9158551896</p>" \
-              "</div>"
-st.markdown(header_html, unsafe_allow_html=True)
+st.markdown("""
+    <div class="top-header">
+        <p class="top-title">🏎️ MY SHIVSHAKTI AUTO PARTS & SERVICE</p>
+        <p class="top-sub">📍 Main Road, Rantham, Chikhli, Malkapur (MH) &nbsp;|&nbsp; 📞 9158551896</p>
+    </div>
+""", unsafe_allow_html=True)
 
 if "menu_tab" not in st.session_state:
     st.session_state.menu_tab = "🛒 Billing"
@@ -129,7 +183,7 @@ if st.session_state.menu_tab == "🛒 Billing":
         st.session_state.cart = []
 
     st.markdown("---")
-    st.markdown("### ➕ Add Items (MRP & Selling Price)")
+    st.markdown("### ➕ Add Spare Parts")
     
     inv_df = pd.read_sql("SELECT * FROM parts", conn)
     
@@ -196,7 +250,7 @@ if st.session_state.menu_tab == "🛒 Billing":
 
     parts_total_sum = 0.0
     total_mrp_sum = 0.0
-
+    
     if st.session_state.cart:
         st.markdown("---")
         st.markdown("### 📋 Current Bill Cart (सामान सूची)")
@@ -205,27 +259,29 @@ if st.session_state.menu_tab == "🛒 Billing":
             parts_total_sum += item['total']
             total_mrp_sum += item['total_mrp']
             
-            col_i1, col_i2, col_i3 = st.columns([3, 2, 1])
+            col_i1, col_i2, col_i3 = st.columns([4, 2, 1])
             with col_i1:
-                st.markdown(f"• **{item['name']}** (Qty: {item['qty']})<br><span style='font-size:13px; color:#64748b;'>MRP: ₹{item['mrp']} | Sell: ₹{item['price']}</span>", unsafe_allow_html=True)
+                st.markdown(f"**{idx+1}. {item['name']}** (x{item['qty']})<br>MRP: ₹{item['mrp']} | Sell: ₹{item['price']}", unsafe_allow_html=True)
             with col_i2:
-                st.markdown(f"<span style='font-size:16px; font-weight:800;'>₹{item['total']:.2f}</span>", unsafe_allow_html=True)
+                st.markdown(f"<br><b>₹{item['total']:.2f}</b>", unsafe_allow_html=True)
             with col_i3:
-                if st.button("❌ Delete", key=f"del_cart_{idx}"):
+                st.markdown("<br>", unsafe_allow_html=True)
+                if st.button("🗑️ Delete", key=f"del_cart_{idx}"):
                     st.session_state.cart.pop(idx)
                     st.rerun()
                     
         total_savings = max(0.0, total_mrp_sum - parts_total_sum)
         
-        savings_box = f"<div style='background: #dcfce7; border: 1px solid #22c55e; padding: 12px; border-radius: 8px; margin: 10px 0;'>" \
-                      f"<span style='color: #166534; font-size: 16px; font-weight: bold;'>🎉 Customer Total Savings (MRP Discount): ₹{total_savings:.2f}</span>" \
-                      f"</div>"
-        st.markdown(savings_box, unsafe_allow_html=True)
+        st.markdown(f"""
+            <div style="background: #dcfce7; border: 1px solid #22c55e; padding: 12px; border-radius: 8px; margin: 12px 0;">
+                <span style="color: #166534; font-size: 16px; font-weight: bold;">🎉 Customer Total Savings (MRP Discount): ₹{total_savings:.2f}</span>
+            </div>
+        """, unsafe_allow_html=True)
     else:
         total_savings = 0.0
 
     st.markdown("---")
-    st.markdown("### 👨‍🔧 Add Labour & Services (लेबर चार्ज जोड़ें)")
+    st.markdown("### 👨‍🔧 Add Labour & Services (लेबर चार्ज)")
     
     if "labour_list" not in st.session_state:
         st.session_state.labour_list = []
@@ -257,14 +313,17 @@ if st.session_state.menu_tab == "🛒 Billing":
             
             cl1, cl2 = st.columns([5, 1])
             with cl1:
-                st.markdown(f"👉 **{lab['desc']}**: ₹{lab['cost']:.2f}")
+                st.write(f"👉 **{lab['desc']}**: ₹{lab['cost']:.2f}")
             with cl2:
-                if st.button("❌", key=f"del_lab_{l_idx}"):
+                if st.button("🗑️", key=f"del_lab_{l_idx}"):
                     st.session_state.labour_list.pop(l_idx)
                     st.rerun()
 
+    # --------------------------------------------------------
+    # NEW: ADDITIONAL EXTRA WORK / CHARGES SECTION
+    # --------------------------------------------------------
     st.markdown("---")
-    st.markdown("### 🛠️ Add Extra Charges / Other Work (अतिरिक्त अन्य काम का पैसा)")
+    st.markdown("### 🛠️ Additional Extra Works / Other Charges (अन्य अलग काम और खर्चे)")
     
     if "extra_list" not in st.session_state:
         st.session_state.extra_list = []
@@ -273,10 +332,10 @@ if st.session_state.menu_tab == "🛒 Billing":
     with col_e1:
         e_desc_input = st.text_input("Extra Work Name", placeholder="उदा. Welding / Lathe Work / Oil Change", key=f"e_desc_input_{st.session_state.form_gen}")
     with col_e2:
-        e_cost_input = st.number_input("Extra Cost (₹)", min_value=0.0, step=10.0, key=f"e_cost_input_{st.session_state.form_gen}")
+        e_cost_input = st.number_input("Extra Work Cost (₹)", min_value=0.0, step=10.0, key=f"e_cost_input_{st.session_state.form_gen}")
     with col_e3:
         st.markdown("<br>", unsafe_allow_html=True)
-        if st.button("➕ Add Extra"):
+        if st.button("➕ Add Extra Work"):
             if e_desc_input and e_cost_input > 0:
                 st.session_state.extra_list.append({
                     "desc": e_desc_input,
@@ -285,8 +344,8 @@ if st.session_state.menu_tab == "🛒 Billing":
                 st.success("Extra work added!")
                 st.rerun()
             else:
-                st.warning("काम का नाम और सही कीमत दर्ज करें!")
-                
+                st.warning("एक्स्ट्रा काम का नाम और सही कीमत दर्ज करें!")
+
     total_extra_cost = 0.0
     extra_desc_summary = []
     if st.session_state.extra_list:
@@ -296,18 +355,20 @@ if st.session_state.menu_tab == "🛒 Billing":
             
             cel1, cel2 = st.columns([5, 1])
             with cel1:
-                st.markdown(f"👉 **{ext['desc']}**: ₹{ext['cost']:.2f}")
+                st.write(f"👉 **{ext['desc']}**: ₹{ext['cost']:.2f}")
             with cel2:
-                if st.button("❌", key=f"del_ext_{e_idx}"):
+                if st.button("🗑️", key=f"del_ext_{e_idx}"):
                     st.session_state.extra_list.pop(e_idx)
                     st.rerun()
 
+    # Final Calculation
     total_bill = parts_total_sum + total_labour_cost + total_extra_cost
     
-    bill_box = f"<div style='background: #fef3c7; border: 1.5px solid #f59e0b; padding: 18px; border-radius: 12px; margin: 15px 0;'>" \
-               f"<h3 style='color: #b45309; margin: 0; font-size: 20px !important;'>💥 Final Bill Amount: ₹{total_bill:.2f}</h3>" \
-               f"</div>"
-    st.markdown(bill_box, unsafe_allow_html=True)
+    st.markdown(f"""
+        <div style="background: #fef3c7; border: 2px solid #f59e0b; padding: 18px; border-radius: 12px; margin: 15px 0; text-align: center;">
+            <h2 style="color: #b45309; margin: 0; font-size: 24px;">💥 Final Bill Amount: ₹{total_bill:.2f}</h2>
+        </div>
+    """, unsafe_allow_html=True)
     
     pay_mode = st.selectbox("Payment Mode", ["Cash", "Online/UPI", "Udhar (Credit)"], key=f"pay_mode_{st.session_state.form_gen}")
     amount_paid = st.number_input("Amount Paid / Advance (₹)", min_value=0.0, max_value=float(total_bill), value=float(total_bill), key=f"amt_paid_{st.session_state.form_gen}")
@@ -347,30 +408,33 @@ if st.session_state.menu_tab == "🛒 Billing":
     formatted_labour = "\n".join([f"• {lab['desc']}: ₹{lab['cost']:.2f}" for lab in st.session_state.labour_list]) if st.session_state.labour_list else "None"
     formatted_extra = "\n".join([f"• {ext['desc']}: ₹{ext['cost']:.2f}" for ext in st.session_state.extra_list]) if st.session_state.extra_list else "None"
     
-    slip_text = f"🏎️ *MY SHIVSHAKTI AUTO PARTS & SERVICE*\n" \
-                f"📍 Main Road, Rantham, Chikhli, Malkapur (MH)\n" \
-                f"📞 9158551896\n" \
-                f"-----------------------------------\n" \
-                f"👤 *Customer:* {c_name}\n" \
-                f"🚗 *Vehicle:* {v_model} [{v_number}]\n" \
-                f"📅 *Date:* {datetime.now().strftime('%d-%m-%Y %I:%M %p')}\n" \
-                f"-----------------------------------\n" \
-                f"🔧 *Parts List:*\n{formatted_items}\n" \
-                f"-----------------------------------\n" \
-                f"👨‍🔧 *Labour/Services:*\n{formatted_labour}\n" \
-                f"-----------------------------------\n" \
-                f"🛠️ *Extra Work:*\n{formatted_extra}\n" \
-                f"-----------------------------------\n" \
-                f"📦 Parts Total: ₹{parts_total_sum:.2f}\n" \
-                f"👨‍🔧 Labour Total: ₹{total_labour_cost:.2f}\n" \
-                f"🛠️ Extra Work Total: ₹{total_extra_cost:.2f}\n" \
-                f"🎉 *Total Discount (Savings):* ₹{total_savings:.2f}\n" \
-                f"-----------------------------------\n" \
-                f"💰 *Total Bill:* ₹{total_bill:.2f}\n" \
-                f"✅ *Paid:* ₹{amount_paid:.2f}\n" \
-                f"🔴 *Pending:* ₹{balance_due:.2f}\n" \
-                f"-----------------------------------\n" \
-                f"🙏 *धन्यवाद! फिर पधारें।*"
+    slip_text = f"""🏎️ *MY SHIVSHAKTI AUTO PARTS & SERVICE*
+📍 Main Road, Rantham, Chikhli, Malkapur (MH)
+📞 9158551896
+-----------------------------------
+👤 *Customer:* {c_name}
+🚗 *Vehicle:* {v_model} [{v_number}]
+📅 *Date:* {datetime.now().strftime("%d-%m-%Y %I:%M %p")}
+-----------------------------------
+🔧 *Parts List:*
+{formatted_items}
+-----------------------------------
+👨‍🔧 *Labour/Services:*
+{formatted_labour}
+-----------------------------------
+🛠️ *Extra Works:*
+{formatted_extra}
+-----------------------------------
+📦 Parts Total: ₹{parts_total_sum:.2f}
+👨‍🔧 Labour Total: ₹{total_labour_cost:.2f}
+🛠️ Extra Work Total: ₹{total_extra_cost:.2f}
+🎉 *Total Discount (Savings):* ₹{total_savings:.2f}
+-----------------------------------
+💰 *Total Bill:* ₹{total_bill:.2f}
+✅ *Paid:* ₹{amount_paid:.2f}
+🔴 *Pending:* ₹{balance_due:.2f}
+-----------------------------------
+🙏 *धन्यवाद! फिर पधारें।*"""
 
     st.markdown("### 📤 Share Estimate & Download PDF")
     clean_mobile = c_mobile.replace("+", "").replace(" ", "")
@@ -384,14 +448,22 @@ if st.session_state.menu_tab == "🛒 Billing":
         
     with col_s2:
         items_html = "".join([f"<tr><td>{itm['name']}</td><td style='text-align:center;'>{itm['qty']}</td><td style='text-align:right;'>₹{itm['total']:.2f}</td></tr>" for itm in st.session_state.cart])
-        labour_html = "".join([f"<tr><td colspan='2'>Labour: {lab['desc']}</td><td style='text-align:right;'>₹{lab['cost']:.2f}</td></tr>" for lab in st.session_state.labour_list])
-        extra_html = "".join([f"<tr><td colspan='2'>Extra Work: {ext['desc']}</td><td style='text-align:right;'>₹{ext['cost']:.2f}</td></tr>" for ext in st.session_state.extra_list])
+        labour_html = "".join([f"<tr><td colspan='2'>{lab['desc']}</td><td style='text-align:right;'>₹{lab['cost']:.2f}</td></tr>" for lab in st.session_state.labour_list])
+        extra_html = "".join([f"<tr><td colspan='2'>{ext['desc']}</td><td style='text-align:right;'>₹{ext['cost']:.2f}</td></tr>" for ext in st.session_state.extra_list])
         
-        print_html = "<html><head><meta charset='utf-8'></head>" \
-                     "<body style='font-family: Arial; padding: 20px; color: #000;'>" \
-                     "<h2 style='text-align:center; color:#d97706; margin-bottom:0;'>MY SHIVSHAKTI AUTO PARTS & SERVICE</h2>" \
-                     "<p style='text-align:center; margin-top:5px; font-size:12px;'>Main Road, Rantham, Chikhli, Malkapur (MH) | Ph: 9158551896</p>" \
-                     "<hr>" \
-                     f"<p><b>Customer:</b> {c_name} &nbsp;&nbsp;|&nbsp;&nbsp; <b>Vehicle:</b> {v_number}</p>" \
-                     f"<p><b>Date:</b> {datetime.now().strftime('%d-%m-%Y %I:%M %p')}</p>" \
-                     "<table border='1' style='width:100%; border-collapse:collapse; margi
+        print_html = f"""
+            <html>
+            <head><meta charset="utf-8"></head>
+            <body style="font-family: Arial; padding: 20px; color: #000;">
+                <h2 style="text-align:center; color:#d97706; margin-bottom:0;">MY SHIVSHAKTI AUTO PARTS & SERVICE</h2>
+                <p style="text-align:center; margin-top:5px; font-size:12px;">Main Road, Rantham, Chikhli, Malkapur (MH) | Ph: 9158551896</p>
+                <hr>
+                <p><b>Customer:</b> {c_name} &nbsp;&nbsp;|&nbsp;&nbsp; <b>Vehicle:</b> {v_number}</p>
+                <p><b>Date:</b> {datetime.now().strftime('%d-%m-%Y %I:%M %p')}</p>
+                <table border="1" style="width:100%; border-collapse:collapse; margin-top:10px;" cellpadding="8">
+                    <tr style="background:#f1f5f9;"><th>Item Name</th><th style="text-align:center;">Qty</th><th style="text-align:right;">Total (₹)</th></tr>
+                    {items_html}
+                    {labour_html}
+                    {extra_html}
+                </table>
+                <p style="margin-top:10px; color:#166534; font-weight:bold;">🎉 Customer Total Discount (S
