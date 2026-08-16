@@ -9,7 +9,7 @@ import base64
 st.set_page_config(
     page_title="My Shivshakti Auto Parts & Service",
     layout="wide",
-    page_icon="🏎️"
+    page_icon="🏍️"
 )
 
 # 🌟 Clean, Proportional & Touch-Friendly CSS (Larger Fonts)
@@ -126,7 +126,8 @@ conn.commit()
 st.markdown("""
     <div class="top-header">
         <p class="top-title">🏍️ MY SHIVSHAKTI AUTO PARTS & SERVICE centre</p>
-        <p class="top-sub">📍 Main Road, Rantham, Chikhli, Malkapur (MH) &nbsp;|&nbsp; 📞 9158551896</p>
+        <p class="top-sub">📍 Main Road, Rantham, Chikhli, Malkapur (MH) &nbsp;|&nbsp;
+        OWNER -MR ADITYA YUVRAJ CHIMKAR 📞 9158551896</p>
     </div>
 """, unsafe_allow_html=True)
 
@@ -420,10 +421,10 @@ if st.session_state.menu_tab == "🛒 Billing":
     
     slip_text = f"""🏍️ *MY SHIVSHAKTI AUTO PARTS & SERVICE centre*
 📍 Main Road, Rantham, Chikhli, Malkapur (MH)
-📞 9158551896
+OWNER NAME- ADITYA YUVRAJ CHIMKAR 📞 9158551896
 -----------------------------------
 👤 *Customer:* {c_name}
-🚗 *Vehicle:* {v_model} [{v_number}]
+🏍️ *Vehicle:* {v_model} [{v_number}]
 📅 *Date:* {datetime.now().strftime("%d-%m-%Y %I:%M %p")}
 -----------------------------------
 🔧 *Parts List:*
