@@ -125,7 +125,7 @@ conn.commit()
 # --------------------------------------------------------
 st.markdown("""
     <div class="top-header">
-        <p class="top-title">🏎️ MY SHIVSHAKTI AUTO PARTS & SERVICE</p>
+        <p class="top-title">🏍️ MY SHIVSHAKTI AUTO PARTS & SERVICE centre</p>
         <p class="top-sub">📍 Main Road, Rantham, Chikhli, Malkapur (MH) &nbsp;|&nbsp; 📞 9158551896</p>
     </div>
 """, unsafe_allow_html=True)
@@ -418,7 +418,7 @@ if st.session_state.menu_tab == "🛒 Billing":
     formatted_labour = "\n".join([f"• {lab['desc']} (x{lab['qty']}): ₹{lab['total']:.2f}" for lab in st.session_state.labour_list]) if st.session_state.labour_list else "None"
     formatted_extra = "\n".join([f"• {ext['desc']} (x{ext['qty']}): ₹{ext['total']:.2f}" for ext in st.session_state.extra_list]) if st.session_state.extra_list else "None"
     
-    slip_text = f"""🏎️ *MY SHIVSHAKTI AUTO PARTS & SERVICE*
+    slip_text = f"""🏍️ *MY SHIVSHAKTI AUTO PARTS & SERVICE centre*
 📍 Main Road, Rantham, Chikhli, Malkapur (MH)
 📞 9158551896
 -----------------------------------
