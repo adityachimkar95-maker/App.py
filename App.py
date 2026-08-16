@@ -11,11 +11,11 @@ st.set_page_config(
     page_icon="🏎️"
 )
 
-# 🌟 Advanced UI Styling for Clear Visibility & Clean Dropdown Menu
+# 🌟 Clean & Mobile Touch-Friendly CSS (Fixes Dropdown & Visuals)
 st.markdown("""
     <style>
     .stApp {
-        background: #f8fafc;
+        background-color: #f8fafc;
         color: #0f172a;
         font-family: 'Inter', sans-serif;
     }
@@ -28,15 +28,15 @@ st.markdown("""
         background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
         border: 2px solid #cbd5e1;
         border-bottom: 4px solid #f59e0b;
-        padding: 18px 10px;
+        padding: 16px 10px;
         margin-bottom: 15px;
         text-align: center;
         border-radius: 12px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
     }
     .top-title {
         color: #d97706;
-        font-size: 21px;
+        font-size: 20px;
         font-weight: 900;
         text-transform: uppercase;
         margin: 0;
@@ -44,20 +44,18 @@ st.markdown("""
     }
     .top-sub {
         color: #334155;
-        font-size: 13px;
-        margin-top: 6px;
+        font-size: 12px;
+        margin-top: 5px;
         font-weight: 700;
     }
 
     .stTextInput input, .stNumberInput input {
         background-color: #ffffff !important;
         color: #0f172a !important;
-        -webkit-text-fill-color: #0f172a !important;
         border: 1.5px solid #94a3b8 !important;
         border-radius: 8px !important;
-        padding: 10px !important;
-        font-weight: 700 !important;
-        font-size: 15px !important;
+        padding: 8px 10px !important;
+        font-weight: 600 !important;
     }
     
     label, .stMarkdown p, span {
@@ -65,41 +63,16 @@ st.markdown("""
         font-weight: 600;
     }
 
-    /* 🌟 Force Bright White Background and Dark Text for Dropdowns */
-    .stSelectbox div[data-baseweb="select"] {
-        background-color: #ffffff !important;
-        color: #0f172a !important;
-        border: 1.5px solid #94a3b8 !important;
-        border-radius: 8px !important;
-    }
-    
-    div[data-baseweb="popover"], div[data-baseweb="menu"], ul[data-baseweb="menu"], div[role="listbox"] {
-        background-color: #ffffff !important;
-        color: #0f172a !important;
-    }
-    
-    li[data-baseweb="option"], div[role="option"] {
-        background-color: #ffffff !important;
-        color: #0f172a !important;
-        font-weight: 700 !important;
-    }
-    
-    li[data-baseweb="option"]:hover, div[role="option"]:hover {
-        background-color: #fef3c7 !important;
-        color: #b45309 !important;
-    }
-
     .stButton>button, .stFormSubmitButton>button {
         background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
         color: #ffffff !important;
-        -webkit-text-fill-color: #ffffff !important;
         border-radius: 10px !important;
-        font-weight: 900 !important;
+        font-weight: 800 !important;
         border: none !important;
-        box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
+        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
         width: 100%;
         padding: 8px 2px;
-        font-size: 12px !important;
+        font-size: 13px !important;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -156,7 +129,7 @@ st.markdown("""
 if "menu_tab" not in st.session_state:
     st.session_state.menu_tab = "🛒 Billing"
 
-# 🌟 Perfect Horizontal Navigation Bar (4 Columns in a single row)
+# 🌟 Navigation Bar (4 Columns)
 m1, m2, m3, m4 = st.columns(4)
 with m1:
     if st.button("🛒 Billing", key="btn_bill"):
@@ -387,7 +360,7 @@ if st.session_state.menu_tab == "🛒 Billing":
                 </html>
             """
             encoded_html = urllib.parse.quote(print_html)
-            st.markdown(f'<a href="data:text/html;charset=utf-8,{encoded_html}" target="_blank"><button style="background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color:white; border:none; border-radius:10px; padding:10px; width:100%; font-weight:900; cursor:pointer;">🖨️ Print / Save PDF Estimate</button></a>', unsafe_allow_html=True)
+            st.markdown(f'<a href="data:text/html;charset=utf-8,{encoded_html}" target="_blank"><button style="background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color:white; border:none; border-radius:10px; padding:10px; width:100%; font-weight:800; cursor:pointer;">🖨️ Print / Save PDF Estimate</button></a>', unsafe_allow_html=True)
         
         if st.button("🔄 Create New Bill (Reset Cart)"):
             st.session_state.cart = []
@@ -467,4 +440,7 @@ elif st.session_state.menu_tab == "📊 Records":
     st.subheader("📊 All Sales & Service Records")
     records_df = pd.read_sql("SELECT id, customer_name, vehicle_number, items_summary, total_bill, amount_paid, balance_due, total_savings, payment_mode, date FROM sales ORDER BY id DESC", conn)
     if not records_df.empty:
-        st.dataframe(records_df
+        st.dataframe(records_df, use_container_width=True)
+    else:
+        st.info("कोई पुराना रिकॉर्ड नहीं मिला।")
+                
