@@ -31,7 +31,7 @@ st.markdown(css_code, unsafe_allow_html=True)
 # DATABASE SETUP
 # --------------------------------------------------------
 conn = sqlite3.connect("autoparts_shop_v12.db", check_same_thread=False)
-cursor = conn.cursor()
+cursor = conn.cursor() 
 
 cursor.execute('''
     CREATE TABLE IF NOT EXISTS parts (
