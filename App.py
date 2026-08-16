@@ -11,7 +11,7 @@ st.set_page_config(
     page_icon="🏎️"
 )
 
-# 🌟 Advanced UI Styling for Clear Visibility & Horizontal Menu
+# 🌟 Advanced UI Styling for Clear Visibility
 st.markdown("""
     <style>
     .stApp {
@@ -81,8 +81,8 @@ st.markdown("""
         border: none !important;
         box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
         width: 100%;
-        padding: 8px 2px;
-        font-size: 12px !important;
+        padding: 10px 2px;
+        font-size: 13px !important;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -139,7 +139,7 @@ st.markdown("""
 if "menu_tab" not in st.session_state:
     st.session_state.menu_tab = "🛒 Billing"
 
-# 🌟 Perfect Horizontal Navigation Bar (4 Columns in a single row)
+# 🌟 Horizontal Navigation Buttons in a Single Row
 m1, m2, m3, m4 = st.columns(4)
 with m1:
     if st.button("🛒 Billing", key="btn_bill"):
@@ -219,7 +219,7 @@ if st.session_state.menu_tab == "🛒 Billing":
 
     col_a, col_b, col_c, col_d = st.columns(4)
     with col_a:
-        p_name_final = st.text_input("Part Name", value=prefilled_name, placeholder="पार्ट का नाम", key=f"p_name_{st.session_state.form_gen}")
+        p_name_final = st.text_input("Part Name", value=prefilled_name, placeholder="पार्ट का नाम लिखें...", key=f"p_name_{st.session_state.form_gen}")
     with col_b:
         item_mrp_input = st.number_input("MRP (₹)", min_value=0.0, value=default_mrp, step=10.0, key=f"p_mrp_{st.session_state.form_gen}")
     with col_c:
@@ -453,4 +453,4 @@ elif st.session_state.menu_tab == "📊 Records":
         st.dataframe(records_df, use_container_width=True)
     else:
         st.info("कोई पुराना रिकॉर्ड नहीं मिला।")
-0p0
+                                    
