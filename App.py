@@ -538,44 +538,10 @@ if st.session_state.menu_tab == "📦 Stock":
                 for index, row in low_stock_df.iterrows():
                     order_text += f"- {row['name']} (मौजूदा स्टॉक: {row['stock']})\n"
                 
-                st.text_area("Copy Order Text / WhatsApp Share:", value=order_text, height=150)
-        
-        # डेटाफ्रेम दिखाना
-        st.dataframe(stock_df, use_container_width=True)
-        
-        st.markdown("### Update or Delete Part")
-        selected_part = st.selectbox("पार्ट चुनें (संपादित या हटाने के लिए)", stock_df['name'].tolist())
-        
-        part_data = stock_df[stock_df['name'] == selected_part].iloc[0]
-        part_id = part_data['id'] 
-        
-        # यहाँ फॉर्म की जगह नॉर्मल इनपुट्स का इस्तेमाल किया है ताकि Update और Delete सही से काम करें
-        up_name = st.text_input("Edit Part Name", value=part_data['name'])
-        up_mrp = st.number_input("Edit MRP (₹)", min_value=0.0, value=float(part_data['mrp']), step=10.0)
-        up_price = st.number_input("Edit Selling Price (₹)", min_value=0.0, value=float(part_data['selling_price']), step=10.0)
-        up_stock = st.number_input("Edit Stock Quantity", min_value=0, value=int(part_data['stock']))
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button("🔄 Update Stock"):
-                cursor.execute("""
-                    UPDATE parts 
-                    SET name = ?, mrp = ?, selling_price = ?, stock = ? 
-                    WHERE id = ?
-                """, (up_name, up_mrp, up_price, up_stock, part_id))
-                conn.commit()
-                st.success("✅ स्टॉक सफलतापूर्वक अपडेट हो गया!")
-                st.rerun()
-                
-        with col2:
-            if st.button("🗑️ Delete Part"):
-                cursor.execute("DELETE FROM parts WHERE id = ?", (part_id,))
-                conn.commit()
-                st.error("🗑️ पार्ट को स्टॉक से हटा दिया गया है!")
-                st.rerun()
-    else:
-        st.info("स्टॉक में कोई सामान उपलब्ध नहीं है।")
-
+                 # WhatsApp URL Encode करना
+                import urllib.parse
+                whatsapp_url = f"https://wa.me/?text={urllib.parse.quote(order_text)}"
+                st.markdown(f'<a href="{whatsapp_url}" target="_blank">📲 Send Order to WhatsApp</a>', unsafe_allow_html=True)
 
 # --------------------------------------------------------
 # TAB 3: UDHAR KHATA MANAGEMENT
