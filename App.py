@@ -20,7 +20,7 @@ st.markdown("""
         color: #0f172a;
         font-family: 'Inter', sans-serif;
     }
-    
+     
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
