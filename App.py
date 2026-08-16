@@ -466,4 +466,113 @@ if st.session_state.menu_tab == "🛒 Billing":
             <head><meta charset="utf-8"></head>
             <body style="font-family: Arial; padding: 20px; color: #000;">
                 <h2 style="text-align:center; color:#d97706; margin-bottom:0;">MY SHIVSHAKTI AUTO PARTS & SERVICE</h2>
-                <p style="text-align:center; margin-top:5px; font-size:12px;">Main Road, Ranth
+                <p style="text-align:center; margin-top:5px; font-size:12px;">Main Road, Rantham, Chikhli, Malkapur (MH) | Ph: 9158551896</p>
+                <hr>
+                <p><b>Customer:</b> {c_name} &nbsp;&nbsp;|&nbsp;&nbsp; <b>Vehicle:</b> {v_number}</p>
+                <p><b>Date:</b> {datetime.now().strftime('%d-%m-%Y %I:%M %p')}</p>
+                <table border="1" style="width:100%; border-collapse:collapse; margin-top:10px;" cellpadding="8">
+                    <tr style="background:#f1f5f9;"><th>Item Name</th><th style="text-align:center;">Qty</th><th style="text-align:right;">Total (₹)</th></tr>
+                    {items_html}
+                    {labour_html}
+                    {extra_html}
+                </table>
+                <p style="margin-top:10px; color:#166534; font-weight:bold;">🎉 Customer Total Discount (Savings): ₹{total_savings:.2f}</p>
+                <h2 style="color:#b45309; text-align:right;">Final Bill Amount: ₹{total_bill:.2f}</h2>
+                <p style="text-align:center; margin-top:30px;"><b>धन्यवाद! फिर पधारें।</b></p>
+            </body>
+            </html>
+        """
+        b64 = base64.b64encode(print_html.encode('utf-8')).decode('utf-8')
+        pdf_download_link = f'<a href="data:text/html;base64,{b64}" download="Bill_{c_name}_{v_number}.html" target="_blank"><button style="background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color:white; border:none; border-radius:10px; padding:12px; width:100%; font-weight:800; cursor:pointer; font-size:16px;">📥 Download Bill / PDF File</button></a>'
+        st.markdown(pdf_download_link, unsafe_allow_html=True)
+    
+    if st.button("🔄 Create New Bill (Reset Cart)"):
+        st.session_state.cart = []
+        st.session_state.labour_list = []
+        st.session_state.extra_list = []
+        st.session_state.form_gen += 1
+        st.rerun()
+
+# --------------------------------------------------------
+# TAB 2: INVENTORY STOCK MANAGEMENT
+# --------------------------------------------------------
+elif st.session_state.menu_tab == "📦 Stock":
+    st.subheader("📦 Inventory Stock Management")
+    
+    with st.form("add_stock_form", clear_on_submit=True):
+        st.markdown("### Add New Spare Part")
+        p_name = st.text_input("Part Name")
+        p_mrp = st.number_input("MRP (₹)", min_value=0.0, step=10.0)
+        p_price = st.number_input("Selling Price (₹)", min_value=0.0, step=10.0)
+        p_stock = st.number_input("Stock Quantity", min_value=0, value=10)
+        
+        submitted = st.form_submit_button("Save Part to Stock")
+        if submitted:
+            if p_name and p_price > 0:
+                cursor.execute("INSERT INTO parts (name, mrp, selling_price, stock) VALUES (?, ?, ?, ?)", (p_name, p_mrp, p_price, p_stock))
+                conn.commit()
+                st.success("✅ पार्ट सफलतापूर्वक स्टॉक में जोड़ दिया गया!")
+                st.rerun()
+            else:
+                st.warning("कृपया पार्ट का नाम और सेलिंग प्राइस दर्ज करें।")
+                
+    st.markdown("### Current Stock List")
+    stock_df = pd.read_sql("SELECT * FROM parts", conn)
+    if not stock_df.empty:
+        st.dataframe(stock_df, use_container_width=True)
+    else:
+        st.info("स्टॉक में कोई सामान उपलब्ध नहीं है।")
+
+# --------------------------------------------------------
+# TAB 3: UDHAR KHATA MANAGEMENT
+# --------------------------------------------------------
+elif st.session_state.menu_tab == "📖 Udhar":
+    st.subheader("📖 Udhar Khata (Pending Dues)")
+    udhar_df = pd.read_sql("SELECT id, customer_name, vehicle_number, total_bill, amount_paid, balance_due, date FROM sales WHERE balance_due > 0 ORDER BY id DESC", conn)
+    
+    if not udhar_df.empty:
+        st.dataframe(udhar_df, use_container_width=True)
+        
+        st.markdown("### 💰 Clear / Receive Due Payment")
+        due_id = st.number_input("Enter Bill / Sale ID to Clear Due", min_value=1, step=1)
+        paying_amt = st.number_input("Amount Being Paid Now (₹)", min_value=0.0, step=10.0)
+        
+        if st.button("✅ Update Udhar Payment"):
+            cursor.execute("SELECT balance_due, amount_paid FROM sales WHERE id = ?", (due_id,))
+            record = cursor.fetchone()
+            if record:
+                current_due = record[0]
+                current_paid = record[1]
+                
+                new_paid = current_paid + paying_amt
+                new_due = max(0.0, current_due - paying_amt)
+                
+                cursor.execute("UPDATE sales SET amount_paid = ?, balance_due = ? WHERE id = ?", (new_paid, new_due, due_id))
+                conn.commit()
+                st.success(f"✅ बिल ID #{due_id} का पेमेंट अपडेट हो गया! नया बकाया: ₹{new_due:.2f}")
+                st.rerun()
+            else:
+                st.warning("⚠️ यह Bill ID नहीं मिली। सही ID दर्ज करें।")
+    else:
+        st.info("🎉 बहुत बढ़िया! कोई भी उधार/पेंडिंग बकाया नहीं है।")
+
+# --------------------------------------------------------
+# TAB 4: SALES RECORDS
+# --------------------------------------------------------
+elif st.session_state.menu_tab == "📊 Records":
+    st.subheader("📊 Complete Sales Records & History")
+    
+    records_df = pd.read_sql("SELECT * FROM sales ORDER BY id DESC", conn)
+    if not records_df.empty:
+        st.dataframe(records_df, use_container_width=True)
+        
+        total_revenue = records_df['amount_paid'].sum()
+        total_pending = records_df['balance_due'].sum()
+        
+        col_r1, col_r2 = st.columns(2)
+        with col_r1:
+            st.metric("💵 Total Revenue Collected", f"₹{total_revenue:.2f}")
+        with col_r2:
+            st.metric("🔴 Total Pending Market Dues", f"₹{total_pending:.2f}")
+    else:
+        st.info("अभी तक कोई बिक्री रिकॉर्ड दर्ज नहीं हुआ है।")
