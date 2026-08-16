@@ -497,9 +497,10 @@ OWNER NAME- ADITYA YUVRAJ CHIMKAR 📞 9158551896
 # --------------------------------------------------------
 # TAB 2: INVENTORY STOCK MANAGEMENT
 # --------------------------------------------------------
-elif st.session_state.menu_tab == "📦 Stock":
+if st.session_state.menu_tab == "📦 Stock":
     st.subheader("📦 Inventory Stock Management")
     
+    # 1. नया पार्ट जोड़ने का फॉर्म
     with st.form("add_stock_form", clear_on_submit=True):
         st.markdown("### Add New Spare Part")
         p_name = st.text_input("Part Name")
@@ -517,10 +518,63 @@ elif st.session_state.menu_tab == "📦 Stock":
             else:
                 st.warning("कृपया पार्ट का नाम और सेलिंग प्राइस दर्ज करें।")
                 
+    st.markdown("---")
     st.markdown("### Current Stock List")
+    
     stock_df = pd.read_sql("SELECT * FROM parts", conn)
     if not stock_df.empty:
+        # ⚠️ Low Stock Alert (मान लीजिए स्टॉक 5 या उससे कम होने पर लो स्टॉक है)
+        LOW_STOCK_LIMIT = 5
+        low_stock_df = stock_df[stock_df['stock'] <= LOW_STOCK_LIMIT]
+        
+        if not low_stock_df.empty:
+            st.warning(f"⚠️ चेतावनी: {len(high_alert := low_stock_df)} आइटम का स्टॉक बहुत कम हो गया है!")
+            
+            # Low Stock Order Generate करने का बटन
+            if st.button("📋 Generate Low Stock Order List"):
+                st.markdown("#### 🛒 Reorder List (खरीदने के लिए लिस्ट)")
+                order_text = "निम्न स्पेयर पार्ट्स का स्टॉक खत्म होने वाला है, कृपया इन्हें जल्द मंगवाएं:\n\n"
+                for index, row in low_stock_df.iterrows():
+                    order_text += f"- {row['name']} (मौजूदा स्टॉक: {row['stock']})\n"
+                
+                st.text_area("Copy Order Text / WhatsApp Share:", value=order_text, height=150)
+        
+        # डेटाफ्रेम दिखाना (लो स्टॉक वाले आइटम्स को हाईलाइट करने के लिए आइकॉन या कंडीशनल फॉर्मेटिंग)
         st.dataframe(stock_df, use_container_width=True)
+        
+        st.markdown("### Update or Delete Part")
+        selected_part = st.selectbox("पार्ट चुनें (संपादित या हटाने के लिए)", stock_df['name'].tolist())
+        
+        part_data = stock_df[stock_df['name'] == selected_part].iloc[0]
+        part_id = part_data['id'] # (ध्यान दें: आपके डेटाबेस टेबल में 'id' कॉलम होना चाहिए)
+        
+        with st.form("update_delete_form"):
+            up_name = st.text_input("Part Name", value=part_data['name'])
+            up_mrp = st.number_input("MRP (₹)", min_value=0.0, value=float(part_data['mrp']), step=10.0)
+            up_price = st.number_input("Selling Price (₹)", min_value=0.0, value=float(part_data['selling_price']), step=10.0)
+            up_stock = st.number_input("Stock Quantity", min_value=0, value=int(part_data['stock']))
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                update_btn = st.form_submit_button("🔄 Update Stock")
+            with col2:
+                delete_btn = st.form_submit_button("🗑️ Delete Part")
+                
+            if update_btn:
+                cursor.execute("""
+                    UPDATE parts 
+                    SET name = ?, mrp = ?, selling_price = ?, stock = ? 
+                    WHERE id = ?
+                """, (up_name, up_mrp, up_price, up_stock, part_id))
+                conn.commit()
+                st.success("✅ स्टॉक सफलतापूर्वक अपडेट हो गया!")
+                st.rerun()
+                
+            if delete_btn:
+                cursor.execute("DELETE FROM parts WHERE id = ?", (part_id,))
+                conn.commit()
+                st.error("🗑️ पार्ट को स्टॉक से हटा दिया गया है!")
+                st.rerun()
     else:
         st.info("स्टॉक में कोई सामान उपलब्ध नहीं है।")
 
