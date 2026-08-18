@@ -5,7 +5,7 @@ import urllib.parse
 import pandas as pd
 import streamlit as st
 
-# 🎨 पेज कॉन्फ़िगरेशन (मोबाइल और डेस्कटॉप के लिए ऑप्टिमाइज़्ड)
+# 🎨 पेज कॉन्फ़िगरेशन
 st.set_page_config(
     page_title="My Shivshakti Auto Parts & Service",
     layout="wide",
@@ -84,7 +84,7 @@ st.markdown(
 
 
 # --------------------------------------------------------
-# डेटाबेस सेटअप (Database Setup)
+# डेटाबेस सेटअप
 # --------------------------------------------------------
 @st.cache_resource
 def get_db_connection():
@@ -131,7 +131,7 @@ conn = get_db_connection()
 cursor = conn.cursor()
 
 # --------------------------------------------------------
-# सेशन स्टेट इनिशियलाइजेशन (Session State)
+# सेशन स्टेट इनिशियलाइजेशन
 # --------------------------------------------------------
 if "menu_tab" not in st.session_state:
   st.session_state.menu_tab = "🛒 बिलिंग (Billing)"
@@ -145,7 +145,7 @@ if "extra_list" not in st.session_state:
   st.session_state.extra_list = []
 
 # --------------------------------------------------------
-# हेडर और नेविगेशन बटन (Header & Menu)
+# हेडर और नेविगेशन
 # --------------------------------------------------------
 st.markdown(
     """
@@ -179,7 +179,7 @@ with m4:
 st.markdown("---")
 
 # --------------------------------------------------------
-# टैब 1: बिलिंग एवं एस्टिमेट (Billing & Estimate)
+# टैब 1: बिलिंग (Billing)
 # --------------------------------------------------------
 if st.session_state.menu_tab == "🛒 बिलिंग (Billing)":
   st.subheader("📝 नया कस्टमर बिल और एस्टिमेट")
@@ -445,7 +445,6 @@ if st.session_state.menu_tab == "🛒 बिलिंग (Billing)":
         st.session_state.extra_list.pop(e_idx)
         st.rerun()
 
-  # कुल बिल गणना
   total_bill = parts_total_sum + total_labour_cost + total_extra_cost
   st.markdown(f"""
         <div style="background: #fef3c7; border: 2px solid #f59e0b; padding: 18px; border-radius: 12px; margin: 15px 0; text-align: center;">
@@ -508,7 +507,6 @@ if st.session_state.menu_tab == "🛒 बिलिंग (Billing)":
           ),
       )
 
-      # स्टॉक में से सामान घटाना
       for item in st.session_state.cart:
         cursor.execute(
             "UPDATE parts SET stock = stock - ? WHERE name = ?",
@@ -517,7 +515,6 @@ if st.session_state.menu_tab == "🛒 बिलिंग (Billing)":
 
       conn.commit()
 
-      # डेटा रीसेट करना (Clear Form for Next Customer)
       st.session_state.cart = []
       st.session_state.labour_list = []
       st.session_state.extra_list = []
@@ -525,7 +522,6 @@ if st.session_state.menu_tab == "🛒 बिलिंग (Billing)":
       st.success("✅ बिल सफलतापूर्वक सेव हो गया!")
       st.rerun()
 
-  # 📲 व्हाट्सएप और डाउनलोड सेक्शन
   formatted_items = "\n".join([
       f"{idx+1}. {i['name']} (x{i['qty']}) = ₹{i['total']:.2f}"
       for idx, i in enumerate(st.session_state.cart)
@@ -569,7 +565,7 @@ if st.session_state.menu_tab == "🛒 बिलिंग (Billing)":
     )
 
 # --------------------------------------------------------
-# टैब 2: स्टॉक मैनेजमेंट (Stock Management)
+# टैब 2: स्टॉक (Stock)
 # --------------------------------------------------------
 elif st.session_state.menu_tab == "📦 स्टॉक (Stock)":
   st.subheader("📦 दुकान का स्टॉक मैनेजमेंट (Inventory)")
@@ -608,4 +604,77 @@ elif st.session_state.menu_tab == "📦 स्टॉक (Stock)":
   st.markdown("#### 📊 वर्तमान उपलब्ध स्टॉक")
   inv_data = pd.read_sql("SELECT * FROM parts", conn)
   if not inv_data.empty:
-    st.dataframe(inv_data, use_contai
+    st.dataframe(inv_data, use_container_width=True)
+  else:
+    st.info("स्टॉक में अभी कोई सामान दर्ज नहीं है।")
+
+# --------------------------------------------------------
+# टैब 3: उधार (Udhar)
+# --------------------------------------------------------
+elif st.session_state.menu_tab == "📖 उधार खाता (Udhar)":
+  st.subheader("📖 कस्टमर उधार खाता (Credit Ledger)")
+  udhar_df = pd.read_sql("SELECT * FROM sales WHERE balance_due > 0", conn)
+
+  if not udhar_df.empty:
+    st.dataframe(
+        udhar_df[[
+            "id",
+            "customer_name",
+            "customer_mobile",
+            "vehicle_number",
+            "total_bill",
+            "amount_paid",
+            "balance_due",
+            "date",
+        ]],
+        use_container_width=True,
+    )
+
+    st.markdown("---")
+    st.markdown("### 💰 जमा राशि दर्ज करें (Clear/Update Credit)")
+    col_u1, col_u2 = st.columns(2)
+    with col_u1:
+      sale_id = st.number_input("बिल ID दर्ज करें (Record ID)", min_value=1, step=1)
+    with col_u2:
+      rec_amt = st.number_input("प्राप्त हुई राशि (₹)", min_value=0.0, step=10.0)
+
+    if st.button("जमा राशि अपडेट करें"):
+      cursor.execute(
+          "SELECT amount_paid, balance_due FROM sales WHERE id = ?", (sale_id,)
+      )
+      row = cursor.fetchone()
+      if row:
+        new_paid = row[0] + rec_amt
+        new_due = max(0.0, row[1] - rec_amt)
+        cursor.execute(
+            "UPDATE sales SET amount_paid = ?, balance_due = ? WHERE id = ?",
+            (new_paid, new_due, sale_id),
+        )
+        conn.commit()
+        st.success(f"बिल ID #{sale_id} का उधार अपडेट कर दिया गया है!")
+        st.rerun()
+      else:
+        st.error("यह बिल ID सिस्टम में नहीं मिली।")
+  else:
+    st.info("🎉 कोई बकाया उधार नहीं है! सभी खाते क्लियर हैं।")
+
+# --------------------------------------------------------
+# टैब 4: रिकॉर्ड्स (Records)
+# --------------------------------------------------------
+elif st.session_state.menu_tab == "📊 रिकॉर्ड्स (Records)":
+  st.subheader("📊 दुकान की कुल बिक्री और रिकॉर्ड्स")
+  sales_df = pd.read_sql("SELECT * FROM sales ORDER BY id DESC", conn)
+
+  if not sales_df.empty:
+    col_r1, col_r2, col_r3 = st.columns(3)
+    with col_r1:
+      st.metric("कुल कैश कलेक्शन", f"₹{sales_df['amount_paid'].sum():.2f}")
+    with col_r2:
+      st.metric("मार्केट में कुल बकाया उधार", f"₹{sales_df['balance_due'].sum():.2f}")
+    with col_r3:
+      st.metric("कुल बनाए गए बिल", len(sales_df))
+
+    st.markdown("---")
+    st.dataframe(sales_df, use_container_width=True)
+  else:
+    st.info("अभी तक कोई बिक्री रिकॉर्ड दर्ज नहीं हुआ है।")
