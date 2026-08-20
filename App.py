@@ -454,3 +454,10 @@ elif st.session_state.menu_tab == "📦 Stock":
     # 2. Edit / Delete Section
     st.markdown("---")
     st.markdown
+    # Fetch Stock Data
+    stock_df = pd.read_sql("SELECT * FROM parts", conn)
+    
+    # 2. Edit / Delete Section
+    st.markdown("---")  # ✅ Sahi
+    st.markdown("### ✏️ Edit or Delete Stock")
+ 
