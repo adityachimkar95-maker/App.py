@@ -4,7 +4,7 @@ import pandas as pd
 from datetime import datetime
 import urllib.parse
 import base64
- 
+
 # 🎨 Page Configuration (Mobile & Desktop Optimized)
 st.set_page_config(
     page_title="My Shivshakti Auto Parts & Service",
@@ -166,8 +166,8 @@ if st.session_state.menu_tab == "🛒 Billing":
             c_name = st.text_input("Customer Name", value="", placeholder="कस्टमर का नाम लिखें...", key=f"c_name_{st.session_state.form_gen}")
             c_mobile = st.text_input("Customer Mobile Number", value="", placeholder="मोबाइल नंबर लिखें...", key=f"c_mobile_{st.session_state.form_gen}")
         with col_c2:
-            v_number = st.text_input("Vehicle Number", value="", placeholder="गाड़ी नंबर (उदा. MH19...)", key=f"v_num_{st.session_state.form_gen}").upper()
-            v_model = st.text_input("Vehicle Model", value="", placeholder="गाड़ी का मॉडल (उदा. Splendor)", key=f"v_model_{st.session_state.form_gen}")
+            v_number = st.text_input("Vehicle Number", value="", placeholder="गाड़ी नंबर (उदा. MH19...)", key=f"v_num_{st.session_state.form_gen}").upper()
+            v_model = st.text_input("Vehicle Model", value="", placeholder="गाड़ी का मॉडल (उदा. Splendor)", key=f"v_model_{st.session_state.form_gen}")
     else:
         c_name = "Counter Cash Customer"
         c_mobile = ""
@@ -325,7 +325,7 @@ if st.session_state.menu_tab == "🛒 Billing":
         
         if st.button("💾 Save & Generate Bill Slip"):
             if not no_bill_mode and (not c_name or not v_number):
-                st.warning("⚠️ कृपया कस्टमर का नाम और गाड़ी नंबर दर्ज करें।")
+                st.warning("⚠️ कृपया कस्टमर का नाम और गाड़ी नंबर दर्ज करें।")
             else:
                 current_date = datetime.now().strftime("%d-%m-%Y %I:%M %p")
                 
@@ -425,12 +425,11 @@ if st.session_state.menu_tab == "🛒 Billing":
             st.rerun()
 
 # --------------------------------------------------------
-# TAB 2: INVENTORY STOCK MANAGEMENT (WITH EDIT & DELETE)
+# TAB 2: INVENTORY STOCK MANAGEMENT
 # --------------------------------------------------------
 elif st.session_state.menu_tab == "📦 Stock":
     st.subheader("📦 Inventory Stock Management")
     
-    # 1. Add New Spare Part
     with st.expander("➕ Add New Spare Part (नया सामान जोड़ें)", expanded=False):
         with st.form("add_stock_form", clear_on_submit=True):
             p_name = st.text_input("Part Name")
@@ -448,16 +447,10 @@ elif st.session_state.menu_tab == "📦 Stock":
                 else:
                     st.warning("कृपया पार्ट का नाम और सेलिंग प्राइस दर्ज करें।")
 
-    # Fetch Stock Data
     stock_df = pd.read_sql("SELECT * FROM parts", conn)
     
-    # 2. Edit / Delete Section
     st.markdown("---")
-    st.markdown
-    # Fetch Stock Data
-    stock_df = pd.read_sql("SELECT * FROM parts", conn)
-    
-    # 2. Edit / Delete Section
-    st.markdown("---")  # ✅ Sahi
     st.markdown("### ✏️ Edit or Delete Stock")
- 
+    
+    if not stock_df.empty:
+        st.dataframe(stock_df, use_conta
