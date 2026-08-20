@@ -422,35 +422,34 @@ if st.session_state.menu_tab == "🛒 Billing":
             st.rerun()
 
 # --------------------------------------------------------
-# TAB 2: INVENTORY STOCK MANAGEMENT
+# TAB 2: INVENTORY STOCK MANAGEMENT (WITH EDIT & DELETE)
 # --------------------------------------------------------
 elif st.session_state.menu_tab == "📦 Stock":
     st.subheader("📦 Inventory Stock Management")
     
-    with st.form("add_stock_form", clear_on_submit=True):
-        st.markdown("### Add New Spare Part")
-        p_name = st.text_input("Part Name")
-        p_mrp = st.number_input("MRP (₹)", min_value=0.0, step=10.0)
-        p_price = st.number_input("Selling Price (₹)", min_value=0.0, step=10.0)
-        p_stock = st.number_input("Stock Quantity", min_value=0, value=10)
-        
-        submitted = st.form_submit_button("Save Part to Stock")
-        if submitted:
-            if p_name and p_price > 0:
-                cursor.execute("INSERT INTO parts (name, mrp, selling_price, stock) VALUES (?, ?, ?, ?)", (p_name, p_mrp, p_price, p_stock))
-                conn.commit()
-                st.success("✅ पार्ट सफलतापूर्वक स्टॉक में जोड़ दिया गया!")
-                st.rerun()
-            else:
-                st.warning("कृपया पार्ट का नाम और सेलिंग प्राइस दर्ज करें।")
-                
-    st.markdown("### Current Stock List")
-    stock_df = pd.read_sql("SELECT * FROM parts", conn)
-    if not stock_df.empty:
-        st.dataframe(stock_df, use_container_width=True)
-    else:
-        st.info("स्टॉक में कोई सामान उपलब्ध नहीं है।")
+    # 1. Add New Spare Part
+    with st.expander("➕ Add New Spare Part (नया सामान जोड़ें)", expanded=False):
+        with st.form("add_stock_form", clear_on_submit=True):
+            p_name = st.text_input("Part Name")
+            p_mrp = st.number_input("MRP (₹)", min_value=0.0, step=10.0)
+            p_price = st.number_input("Selling Price (₹)", min_value=0.0, step=10.0)
+            p_stock = st.number_input("Stock Quantity", min_value=0, value=10)
+            
+            submitted = st.form_submit_button("Save Part to Stock")
+            if submitted:
+                if p_name and p_price > 0:
+                    cursor.execute("INSERT INTO parts (name, mrp, selling_price, stock) VALUES (?, ?, ?, ?)", (p_name, p_mrp, p_price, p_stock))
+                    conn.commit()
+                    st.success("✅ पार्ट सफलतापूर्वक स्टॉक में जोड़ दिया गया!")
+                    st.rerun()
+                else:
+                    st.warning("कृपया पार्ट का नाम और सेलिंग प्राइस दर्ज करें।")
 
-# --------------------------------------------------------
-# TAB 3: UDHAR KHATA MANAGEMENT
-# -------------------------
+    # Fetch Stock Data
+    stock_df = pd.read_sql("SELECT * FROM parts", conn)
+    
+    # 2. Edit / Delete Section
+    st.markdown("---")
+    st.markdown("### ✏️ Edit or Delete Existing Item (सामान में बदलाव करें या हटाएं)")
+    
+    if no
