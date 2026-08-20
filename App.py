@@ -453,4 +453,4 @@ elif st.session_state.menu_tab == "📦 Stock":
     
     # 2. Edit / Delete Section
     st.markdown("---")
-    st.markdoown
+    st.markdown
