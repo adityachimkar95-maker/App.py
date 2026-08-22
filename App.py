@@ -166,8 +166,8 @@ if st.session_state.menu_tab == "🛒 Billing":
             c_name = st.text_input("Customer Name", value="", placeholder="कस्टमर का नाम लिखें...", key=f"c_name_{st.session_state.form_gen}")
             c_mobile = st.text_input("Customer Mobile Number", value="", placeholder="मोबाइल नंबर लिखें...", key=f"c_mobile_{st.session_state.form_gen}")
         with col_c2:
-            v_number = st.text_input("Vehicle Number", value="", placeholder="गाड़ी नंबर (उदा. MH19...)", key=f"v_num_{st.session_state.form_gen}").upper()
-            v_model = st.text_input("Vehicle Model", value="", placeholder="गाड़ी का मॉडल (उदा. Splendor)", key=f"v_model_{st.session_state.form_gen}")
+            v_number = st.text_input("Vehicle Number", value="", placeholder="गाड़ी नंबर (उदा. MH19...)", key=f"v_num_{st.session_state.form_gen}").upper()
+            v_model = st.text_input("Vehicle Model", value="", placeholder="गाड़ी का मॉडल (उदा. Splendor)", key=f"v_model_{st.session_state.form_gen}")
     else:
         c_name = "Counter Cash Customer"
         c_mobile = ""
@@ -325,7 +325,7 @@ if st.session_state.menu_tab == "🛒 Billing":
         
         if st.button("💾 Save & Generate Bill Slip"):
             if not no_bill_mode and (not c_name or not v_number):
-                st.warning("⚠️ कृपया कस्टमर का नाम और गाड़ी नंबर दर्ज करें।")
+                st.warning("⚠️ कृपया कस्टमर का नाम और गाड़ी नंबर दर्ज करें।")
             else:
                 current_date = datetime.now().strftime("%d-%m-%Y %I:%M %p")
                 
@@ -349,10 +349,7 @@ if st.session_state.menu_tab == "🛒 Billing":
                 conn.commit()
                 st.success(f"✅ बिल सफलतापूर्वक सेव हो गया! ID: #{sale_id}")
                 
-        # 📲 WhatsApp & Download PDF Section
-        st.markdown("---")
-        st.markdown("### 📤 Share Estimate & Download PDF")
-        
+        # 📲 WhatsApp & Download PDF Section with Discount Included
         formatted_items = "\n".join([f"{idx+1}. {item['name']} (x{item['qty']}) = ₹{item['total']:.2f}" for idx, item in enumerate(st.session_state.cart)])
         formatted_labour = "\n".join([f"• {lab['desc']}: ₹{lab['cost']:.2f}" for lab in st.session_state.labour_list]) if st.session_state.labour_list else "None"
         
@@ -380,6 +377,7 @@ if st.session_state.menu_tab == "🛒 Billing":
 -----------------------------------
 🙏 *धन्यवाद! फिर पधारें।*"""
 
+        st.markdown("### 📤 Share Estimate & Download PDF")
         clean_mobile = c_mobile.replace("+", "").replace(" ", "")
         if len(clean_mobile) == 10:
             clean_mobile = "91" + clean_mobile
@@ -417,7 +415,6 @@ if st.session_state.menu_tab == "🛒 Billing":
             pdf_download_link = f'<a href="data:text/html;base64,{b64}" download="Bill_{c_name}_{v_number}.html" target="_blank"><button style="background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color:white; border:none; border-radius:10px; padding:10px; width:100%; font-weight:800; cursor:pointer;">📥 Download Bill / PDF File</button></a>'
             st.markdown(pdf_download_link, unsafe_allow_html=True)
         
-        st.markdown("<br>", unsafe_allow_html=True)
         if st.button("🔄 Create New Bill (Reset Cart)"):
             st.session_state.cart = []
             st.session_state.labour_list = []
@@ -430,27 +427,30 @@ if st.session_state.menu_tab == "🛒 Billing":
 elif st.session_state.menu_tab == "📦 Stock":
     st.subheader("📦 Inventory Stock Management")
     
-    with st.expander("➕ Add New Spare Part (नया सामान जोड़ें)", expanded=False):
-        with st.form("add_stock_form", clear_on_submit=True):
-            p_name = st.text_input("Part Name")
-            p_mrp = st.number_input("MRP (₹)", min_value=0.0, step=10.0)
-            p_price = st.number_input("Selling Price (₹)", min_value=0.0, step=10.0)
-            p_stock = st.number_input("Stock Quantity", min_value=0, value=10)
-            
-            submitted = st.form_submit_button("Save Part to Stock")
-            if submitted:
-                if p_name and p_price > 0:
-                    cursor.execute("INSERT INTO parts (name, mrp, selling_price, stock) VALUES (?, ?, ?, ?)", (p_name, p_mrp, p_price, p_stock))
-                    conn.commit()
-                    st.success("✅ पार्ट सफलतापूर्वक स्टॉक में जोड़ दिया गया!")
-                    st.rerun()
-                else:
-                    st.warning("कृपया पार्ट का नाम और सेलिंग प्राइस दर्ज करें।")
-
+    with st.form("add_stock_form", clear_on_submit=True):
+        st.markdown("### Add New Spare Part")
+        p_name = st.text_input("Part Name")
+        p_mrp = st.number_input("MRP (₹)", min_value=0.0, step=10.0)
+        p_price = st.number_input("Selling Price (₹)", min_value=0.0, step=10.0)
+        p_stock = st.number_input("Stock Quantity", min_value=0, value=10)
+        
+        submitted = st.form_submit_button("Save Part to Stock")
+        if submitted:
+            if p_name and p_price > 0:
+                cursor.execute("INSERT INTO parts (name, mrp, selling_price, stock) VALUES (?, ?, ?, ?)", (p_name, p_mrp, p_price, p_stock))
+                conn.commit()
+                st.success("✅ पार्ट सफलतापूर्वक स्टॉक में जोड़ दिया गया!")
+                st.rerun()
+            else:
+                st.warning("कृपया पार्ट का नाम और सेलिंग प्राइस दर्ज करें।")
+                
+    st.markdown("### Current Stock List")
     stock_df = pd.read_sql("SELECT * FROM parts", conn)
-    
-    st.markdown("---")
-    st.markdown("### ✏️ Edit or Delete Stock")
-    
     if not stock_df.empty:
-        st.dataframe(stock_df, use_conta
+        st.dataframe(stock_df, use_container_width=True)
+    else:
+        st.info("स्टॉक में कोई सामान उपलब्ध नहीं है।")
+
+# --------------------------------------------------------
+# TAB 3: UDHAR KHATA MANAGEMENT
+# --
