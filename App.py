@@ -1,4 +1,13 @@
 import streamlit as st
+from supabase import create_client
+
+# Supabase details
+SUPABASE_URL = "https://vgpkmkeyezirxshkfudv.supabase.co"
+SUPABASE_KEY = "आपकी_sb_publishable_key"  # जो आपने कॉपी की थी
+
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+import streamlit as st
 import sqlite3
 import pandas as pd
 from datetime import datetime
