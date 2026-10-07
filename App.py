@@ -1,13 +1,4 @@
 import streamlit as st
-from supabase import create_client
-
-# Supabase details
-SUPABASE_URL = "https://vgpkmkeyezirxshkfudv.supabase.co"
-SUPABASE_KEY = "आपकी_sb_publishable_key"  # जो आपने कॉपी की थी
-
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-
-import streamlit as st
 import sqlite3
 import pandas as pd
 from datetime import datetime
@@ -454,4 +445,12 @@ elif st.session_state.menu_tab == "📦 Stock":
                 st.warning("कृपया पार्ट का नाम और सेलिंग प्राइस दर्ज करें।")
                 
     st.markdown("### Current Stock List")
-    stock_df = pd.read_sql("SELECT * FROM parts
+    stock_df = pd.read_sql("SELECT * FROM parts", conn)
+    if not stock_df.empty:
+        st.dataframe(stock_df, use_container_width=True)
+    else:
+        st.info("स्टॉक में कोई सामान उपलब्ध नहीं है।")
+
+# --------------------------------------------------------
+# TAB 3: UDHAR KHATA MANAGEMENT
+# --
