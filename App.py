@@ -4,6 +4,8 @@ import pandas as pd
 from datetime import datetime
 import urllib.parse
 import base64
+import os
+from supabase import create_client, Client
 
 # 🎨 Page Configuration (Mobile & Desktop Optimized)
 st.set_page_config(
@@ -11,6 +13,18 @@ st.set_page_config(
     layout="wide",
     page_icon="🏎️"
 )
+
+# --------------------------------------------------------
+# SUPABASE CONNECTION SETUP
+# --------------------------------------------------------
+supabase: Client = None
+try:
+    SUPABASE_URL = st.secrets["SUPABASE_URL"]
+    SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
+    if SUPABASE_URL and SUPABASE_KEY:
+        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+except Exception as e:
+    pass
 
 # 🌟 Clean & Mobile Touch-Friendly CSS
 st.markdown("""
@@ -347,6 +361,17 @@ if st.session_state.menu_tab == "🛒 Billing":
                     cursor.execute("UPDATE parts SET stock = stock - ? WHERE name = ?", (item['qty'], item['name']))
 
                 conn.commit()
+
+                # Sync with Supabase (if connected)
+                if supabase:
+                    try:
+                        supabase.table("adityachimkar95-maker's Org").insert({
+                            "title": f"Bill #{sale_id}: {c_name} ({v_number})",
+                            "original_url": f"Total: ₹{total_bill} | Paid: ₹{amount_paid} | Due: ₹{balance_due}"
+                        }).execute()
+                    except Exception as e:
+                        st.warning(f"Supabase Sync Warning: {e}")
+
                 st.success(f"✅ बिल सफलतापूर्वक सेव हो गया! ID: #{sale_id}")
                 
         # 📲 WhatsApp & Download PDF Section with Discount Included
@@ -431,26 +456,4 @@ elif st.session_state.menu_tab == "📦 Stock":
         st.markdown("### Add New Spare Part")
         p_name = st.text_input("Part Name")
         p_mrp = st.number_input("MRP (₹)", min_value=0.0, step=10.0)
-        p_price = st.number_input("Selling Price (₹)", min_value=0.0, step=10.0)
-        p_stock = st.number_input("Stock Quantity", min_value=0, value=10)
-        
-        submitted = st.form_submit_button("Save Part to Stock")
-        if submitted:
-            if p_name and p_price > 0:
-                cursor.execute("INSERT INTO parts (name, mrp, selling_price, stock) VALUES (?, ?, ?, ?)", (p_name, p_mrp, p_price, p_stock))
-                conn.commit()
-                st.success("✅ पार्ट सफलतापूर्वक स्टॉक में जोड़ दिया गया!")
-                st.rerun()
-            else:
-                st.warning("कृपया पार्ट का नाम और सेलिंग प्राइस दर्ज करें।")
-                
-    st.markdown("### Current Stock List")
-    stock_df = pd.read_sql("SELECT * FROM parts", conn)
-    if not stock_df.empty:
-        st.dataframe(stock_df, use_container_width=True)
-    else:
-        st.info("स्टॉक में कोई सामान उपलब्ध नहीं है।")
-
-# --------------------------------------------------------
-# TAB 3: UDHAR KHATA MANAGEMENT
-# --
+        p_price = st.number_input("Sell
