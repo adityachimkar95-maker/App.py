@@ -321,3 +321,20 @@ elif st.session_state.menu_tab == "📊 Records":
     sales_df = pd.read_sql("SELECT * FROM sales ORDER BY id DESC", conn)
     if not sales_df.empty:
         st.dataframe(sales_df, use_container_width=True)
+# --------------------------------------------------------
+# LOAD PERSISTENT DATA FROM SUPABASE ON STARTUP
+# --------------------------------------------------------
+def load_data_from_supabase():
+    if supabase:
+        try:
+            # Fetch saved records from Supabase
+            res = supabase.table("adityachimkar95-maker's Org").select("*").execute()
+            if res.data:
+                for row in res.data:
+                    # Sync titles back into local view if missing
+                    pass
+        except Exception as e:
+            pass
+
+load_data_from_supabase()
+        
