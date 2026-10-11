@@ -2,8 +2,6 @@ import streamlit as st
 import sqlite3
 import pandas as pd
 from datetime import datetime
-import urllib.parse
-import base64
 
 # 🎨 Page Configuration
 st.set_page_config(
@@ -11,17 +9,6 @@ st.set_page_config(
     layout="wide",
     page_icon="🏎️"
 )
-
-# --------------------------------------------------------
-# SUPABASE CONNECTION SETUP
-# --------------------------------------------------------
-supabase = None
-try:
-    from supabase import create_client
-    if "SUPABASE_URL" in st.secrets and "SUPABASE_KEY" in st.secrets:
-        supabase = create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
-except Exception:
-    pass
 
 # 🌟 Clean & Mobile CSS
 st.markdown("""
@@ -49,7 +36,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --------------------------------------------------------
-# DATABASE SETUP (Local SQLite)
+# DATABASE SETUP (Local SQLite - Stable & Fast)
 # --------------------------------------------------------
 conn = sqlite3.connect("autoparts_shop_v12.db", check_same_thread=False)
 cursor = conn.cursor()
@@ -247,19 +234,6 @@ if st.session_state.menu_tab == "🛒 Billing":
             
             sale_id = cursor.lastrowid
             conn.commit()
-
-            # Save in Supabase
-            if supabase:
-                try:
-                    title_text = f"Bill #{sale_id}: {c_name} ({v_number})"
-                    detail_text = f"Total: ₹{total_bill} | Paid: ₹{amount_paid} | Due: ₹{balance_due} | Mode: {pay_mode} | Mobile: {c_mobile} | Date: {current_date}"
-                    supabase.table("adityachimkar95-maker's Org").insert({
-                        "title": title_text,
-                        "original_url": detail_text
-                    }).execute()
-                except Exception:
-                    pass
-
             st.success(f"✅ Bill Saved #{sale_id}")
 
         if st.button("🔄 New Bill"):
@@ -286,16 +260,6 @@ elif st.session_state.menu_tab == "📦 Stock":
             if p_name and p_price > 0:
                 cursor.execute("INSERT INTO parts (name, mrp, selling_price, stock) VALUES (?, ?, ?, ?)", (p_name, p_mrp, p_price, p_stock))
                 conn.commit()
-
-                if supabase:
-                    try:
-                        supabase.table("adityachimkar95-maker's Org").insert({
-                            "title": f"Stock Item: {p_name}",
-                            "original_url": f"MRP: ₹{p_mrp} | Price: ₹{p_price} | Stock: {p_stock}"
-                        }).execute()
-                    except Exception:
-                        pass
-
                 st.success("✅ पार्ट स्टॉक में जोड़ दिया गया!")
                 st.rerun()
             else:
@@ -306,62 +270,24 @@ elif st.session_state.menu_tab == "📦 Stock":
         st.dataframe(stock_df, use_container_width=True)
 
 # --------------------------------------------------------
-# TAB 3: UDHAR KHATA (Synced with Supabase Cloud)
+# TAB 3: UDHAR KHATA
 # --------------------------------------------------------
 elif st.session_state.menu_tab == "📖 Udhar":
-    st.subheader("📖 Udhar Khata (Pending Payments - Cloud Backup)")
-    
-    udhar_list = []
-    # Fetch directly from Supabase
-    if supabase:
-        try:
-            res = supabase.table("adityachimkar95-maker's Org").select("*").execute()
-            if res.data:
-                for row in res.data:
-                    title = row.get("title", "")
-                    details = row.get("original_url", "")
-                    if "Due:" in details and "Due: ₹0.0" not in details and "Due: ₹0" not in details:
-                        udhar_list.append({"Record / Customer": title, "Payment Details": details})
-        except Exception as e:
-            st.error(f"Error fetching Udhar records: {e}")
-
-    if udhar_list:
-        st.dataframe(pd.DataFrame(udhar_list), use_container_width=True)
+    st.subheader("📖 Udhar Khata (Pending Payments)")
+    udhar_df = pd.read_sql("SELECT * FROM sales WHERE balance_due > 0 ORDER BY id DESC", conn)
+    if not udhar_df.empty:
+        st.dataframe(udhar_df, use_container_width=True)
     else:
-        # Fallback to local SQLite if empty
-        udhar_df = pd.read_sql("SELECT * FROM sales WHERE balance_due > 0", conn)
-        if not udhar_df.empty:
-            st.dataframe(udhar_df, use_container_width=True)
-        else:
-            st.success("🎉 कोई उधारी नहीं है!")
+        st.success("🎉 कोई उधारी नहीं है!")
 
 # --------------------------------------------------------
-# TAB 4: RECORDS (Synced with Supabase Cloud)
+# TAB 4: RECORDS
 # --------------------------------------------------------
 elif st.session_state.menu_tab == "📊 Records":
-    st.subheader("📊 Sales History & Cloud Records")
-    
-    records_list = []
-    # Fetch all records directly from Supabase
-    if supabase:
-        try:
-            res = supabase.table("adityachimkar95-maker's Org").select("*").order("id", desc=True).execute()
-            if res.data:
-                for row in res.data:
-                    records_list.append({
-                        "ID": row.get("id"),
-                        "Title / Customer": row.get("title"),
-                        "Bill & Payment Info": row.get("original_url")
-                    })
-        except Exception as e:
-            st.error(f"Error fetching Records: {e}")
-
-    if records_list:
-        st.dataframe(pd.DataFrame(records_list), use_container_width=True)
+    st.subheader("📊 Sales History & Records")
+    sales_df = pd.read_sql("SELECT * FROM sales ORDER BY id DESC", conn)
+    if not sales_df.empty:
+        st.dataframe(sales_df, use_container_width=True)
     else:
-        # Fallback to local SQLite if empty
-        sales_df = pd.read_sql("SELECT * FROM sales ORDER BY id DESC", conn)
-        if not sales_df.empty:
-            st.dataframe(sales_df, use_container_width=True)
-        else:
-            st.info("कोई सेल्स रिकॉर्ड उपलब्ध नहीं है।")
+        st.info("कोई सेल्स रिकॉर्ड उपलब्ध नहीं है।")
+        
