@@ -5,7 +5,7 @@ from datetime import datetime
 
 # 🎨 Page Configuration
 st.set_page_config(
-    page_title=" Shivshakti Auto Parts & Service",
+    page_title="Shivshakti Auto Parts & Service",
     layout="wide",
     page_icon="🏎️"
 )
